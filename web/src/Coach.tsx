@@ -13,7 +13,7 @@ import {
   MessageSquarePlus,
   Paperclip,
   SlidersHorizontal,
-  Sparkles,
+  MessageSquare,
   X,
 } from '@keyline-icons/react/duotone';
 import { api, attemptPath, errorMessage } from './model';
@@ -48,7 +48,7 @@ export function Settings({
             {providers.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
-                {p.available ? '' : ' · unavailable'}
+                {p.available ? '' : ' (unavailable)'}
               </option>
             ))}
           </NativeSelect>
@@ -181,7 +181,7 @@ export function Coach({
   return (
     <aside className="coach-pane" aria-label="AI assistant" hidden={hidden}>
       <div className="pane-title">
-        <Sparkles size={15} />
+        <MessageSquare size={15} />
         <strong>AI Assistant</strong>
         <div className="push tool-group">
           <IconButton
@@ -210,7 +210,7 @@ export function Coach({
         {messages.length === 0 ? (
           <div className="coach-intro">
             <div className="coach-star">
-              <Sparkles size={26} />
+              <MessageSquare size={26} />
             </div>
             <h2>Where are you stuck?</h2>
             <p>Talk through the evidence with your coach while you work on a fix.</p>

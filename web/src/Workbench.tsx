@@ -1,3 +1,4 @@
+import * as m from 'motion/react-m';
 import { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
@@ -221,7 +222,7 @@ export function Workbench({
             </aside>
           )}
           <section className="center-pane" aria-label="Coding workbench">
-            <div className="workspace-tabs">
+            <m.div className="workspace-tabs" layoutScroll>
               {viewItems.map(({ id, name, icon: Icon }) => (
                 <button
                   key={id}
@@ -237,9 +238,17 @@ export function Workbench({
                       {grade?.stale ? '*' : ''}
                     </small>
                   )}
+                  {view === id && (
+                    <m.span
+                      aria-hidden="true"
+                      className="workspace-tab-indicator"
+                      layoutId="workspace-tab-indicator"
+                      transition={{ type: 'spring', visualDuration: 0.2, bounce: 0 }}
+                    />
+                  )}
                 </button>
               ))}
-            </div>
+            </m.div>
             <div className="views">
               <section className="editor-view" hidden={view !== 'editor'}>
                 {attempt.editorUrl ? (
