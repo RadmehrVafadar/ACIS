@@ -1,0 +1,57 @@
+x-workspace: &workspace
+    image: ${ACIS_IMAGE:?}
+    working_dir: /workspace
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: acis
+      PGUSER: acis
+      PGPASSWORD: practice
+      DATABASE_URL: postgresql://acis:practice@postgres/acis
+      MONGODB_URI: mongodb://mongo:27017/acis
+      MONGODB_TEST_URI: mongodb://mongo:27017/acis_test
+      ACIS_PROTECTED: ${ACIS_PROTECTED:-[]}
+      ACIS_REPORT: /tmp/acis-tests.xml
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - type: bind
+        source: ${ACIS_WORKSPACE:?}
+        target: /workspace
+        bind:
+          create_host_path: false
+      - venv:/opt/acis-venv
+services:
+  workbench:
+    <<: *workspace
+  app:
+    <<: *workspace
+    network_mode: service:workbench
+  postgres:
+    image: postgres:16-alpine
+    profiles: [postgres]
+    environment:
+      POSTGRES_USER: acis
+      POSTGRES_PASSWORD: practice
+      POSTGRES_DB: acis
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acis -d acis"]
+      interval: 1s
+      timeout: 4s
+      retries: 60
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  mongo:
+    image: mongo:8.0
+    profiles: [mongo]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 2s
+      timeout: 6s
+      retries: 45
+    volumes:
+      - mongo-data:/data/db
+volumes:
+  venv: {}
+  postgres-data: {}
+  mongo-data: {}

@@ -1,0 +1,8 @@
+[lint]
+extend-select = ["I", "RUF012"]
+
+[lint.isort]
+known-first-party = ["blog", "config", "queue_app", "tickets"]
+
+[lint.per-file-ignores]
+"**/migrations/*.py" = ["RUF012"]  # Django migrations declare class-level operation lists.

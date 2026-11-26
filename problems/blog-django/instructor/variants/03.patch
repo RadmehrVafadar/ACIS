@@ -1,0 +1,25 @@
+diff --git a/backend/blog/views.py b/backend/blog/views.py
+--- a/backend/blog/views.py
++++ b/backend/blog/views.py
+@@ -49,9 +49,9 @@
+         return Response({"posts": PostSerializer(feed, many=True).data})
+ 
+     author = current_author(request)
+-    submission = PostInputSerializer(data=request.data)
++    submission = PostInputSerializer(data=request.data.get("post", {}))
+     submission.is_valid(raise_exception=True)
+-    post = submission.save(author=author)
++    post = submission.save(author=author, published=False)
+     return Response({"message": "Post created successfully", "post": PostSerializer(post).data}, status=201)
+ 
+ 
+diff --git a/backend/blog/serializers.py b/backend/blog/serializers.py
+--- a/backend/blog/serializers.py
++++ b/backend/blog/serializers.py
+@@ -42,5 +42,5 @@
+         if "content" in attrs:
+             if not attrs.get("excerpt") and (not self.partial or "excerpt" in attrs):
+                 attrs["excerpt"] = attrs["content"][:150].strip()
+-            attrs.setdefault("read_time", math.ceil(len(attrs["content"].split()) / 200))
++            attrs["read_time"] = math.ceil(len(attrs["content"].split()) / 200)
+         return attrs

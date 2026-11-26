@@ -1,0 +1,49 @@
+{
+  "id": "room-booking",
+  "title": "Room Booking Conflicts",
+  "description": "Investigate double bookings and rejected time slots in a Django meeting-room calendar.",
+  "runtime": "django",
+  "database": "postgres",
+  "sharedBlog": false,
+  "ports": [
+    {
+      "port": 8080,
+      "label": "Room calendar",
+      "path": "/"
+    }
+  ],
+  "protected": [
+    "README.md",
+    "setup.sh",
+    "seed.sh",
+    "test.sh",
+    "requirements.txt",
+    "pytest.ini",
+    "backend/config/settings.py",
+    "backend/reservations/management/commands/seed.py",
+    "backend/reservations/tests/test_bookings.py"
+  ],
+  "variants": [
+    {
+      "id": "01",
+      "failures": 2
+    }
+  ],
+  "durationMinutes": 45,
+  "install": [
+    "bash",
+    "setup.sh"
+  ],
+  "seed": [
+    "bash",
+    "seed.sh"
+  ],
+  "run": [
+    "bash",
+    "run.sh"
+  ],
+  "test": [
+    "bash",
+    "test.sh"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "id": "sample-python",
+  "title": "Reading queue",
+  "description": "Repair the unread filter in a small reading service.",
+  "runtime": "python",
+  "database": "none",
+  "durationMinutes": 60,
+  "sharedBlog": false,
+  "install": [
+    "python",
+    "-m",
+    "pip",
+    "install",
+    "pytest==8.4.2"
+  ],
+  "seed": [
+    "python",
+    "--version"
+  ],
+  "run": [
+    "python",
+    "server.py"
+  ],
+  "test": [
+    "bash",
+    "test.sh"
+  ],
+  "ports": [
+    {
+      "port": 8000,
+      "label": "Queue",
+      "path": "/"
+    }
+  ],
+  "protected": [
+    "README.md",
+    "test_queue.py",
+    "test.sh"
+  ],
+  "variants": [
+    {
+      "id": "01",
+      "failures": 1
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "sample-node",
+  "title": "Reading queue",
+  "description": "Repair the unread filter in a small reading service.",
+  "runtime": "node",
+  "database": "none",
+  "durationMinutes": 60,
+  "sharedBlog": false,
+  "install": [
+    "node",
+    "--version"
+  ],
+  "seed": [
+    "node",
+    "--version"
+  ],
+  "run": [
+    "node",
+    "server.mjs"
+  ],
+  "test": [
+    "bash",
+    "test.sh"
+  ],
+  "ports": [
+    {
+      "port": 8000,
+      "label": "Queue",
+      "path": "/"
+    }
+  ],
+  "protected": [
+    "README.md",
+    "queue.test.mjs",
+    "test.sh"
+  ],
+  "variants": [
+    {
+      "id": "01",
+      "failures": 1
+    }
+  ]
+}

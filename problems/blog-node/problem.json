@@ -1,0 +1,53 @@
+{
+  "id": "blog-node",
+  "title": "Post Creation",
+  "description": "Reconstruct the reference repository debugging exercise in Express and MongoDB.",
+  "runtime": "node",
+  "database": "mongo",
+  "sharedBlog": true,
+  "ports": [
+    {
+      "port": 8080,
+      "label": "API",
+      "path": "/"
+    },
+    {
+      "port": 8000,
+      "label": "Blog",
+      "path": "/"
+    }
+  ],
+  "protected": [
+    "README.md",
+    "setup.sh",
+    "seed.sh",
+    "test.sh",
+    "backend/config/database.js",
+    "backend/data/seed.json",
+    "backend/test/app.spec.js",
+    "backend/reporter.json"
+  ],
+  "variants": [
+    {
+      "id": "01",
+      "failures": 2
+    }
+  ],
+  "durationMinutes": 60,
+  "install": [
+    "bash",
+    "setup.sh"
+  ],
+  "seed": [
+    "bash",
+    "seed.sh"
+  ],
+  "run": [
+    "bash",
+    "run.sh"
+  ],
+  "test": [
+    "bash",
+    "test.sh"
+  ]
+}

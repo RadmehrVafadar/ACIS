@@ -1,0 +1,11 @@
+{
+  "name": "blog-platform-mern",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "setup": "bash setup.sh",
+    "seed": "bash seed.sh",
+    "start": "bash run.sh",
+    "test": "bash test.sh"
+  }
+}

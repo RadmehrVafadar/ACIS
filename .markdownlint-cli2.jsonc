@@ -1,0 +1,5 @@
+{
+  "globs": ["*.md", "docs/**/*.md", "problems/**/*.md", "templates/**/*.md"],
+  "ignores": ["CLAUDE.md", "**/node_modules/**", ".acis/**", "**/.venv/**"],
+  "config": { "MD013": false, "MD024": { "siblings_only": true }, "MD033": false }
+}

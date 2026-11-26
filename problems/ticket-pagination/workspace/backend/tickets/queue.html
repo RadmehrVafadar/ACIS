@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Support queue</title>
+  <style>
+    :root {color-scheme:dark; font:16px/1.5 system-ui,sans-serif; color:#eef0ed; background:#111715;}
+    * {box-sizing:border-box} body {max-width:760px; margin:auto; padding:clamp(16px,5vw,48px);}
+    h1 {font-size:clamp(28px,5vw,42px); margin:0 0 24px} select,button {font:inherit;color:inherit;background:#28332e;border:1px solid #66776d;border-radius:6px;padding:7px 12px;}
+    label {display:flex;gap:12px;align-items:center} ul {padding:0;list-style:none;border-top:1px solid #46554d;}
+    li {display:flex;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #46554d;} small {color:#aec8b9;}
+    nav {display:flex;align-items:center;gap:16px;} button:disabled {opacity:.45} :focus-visible {outline:2px solid #a9dfbd;outline-offset:2px}
+  </style>
+</head>
+<body>
+  <main><h1>Support queue</h1>
+    <label>Ticket status<select id="filter"><option value="">All statuses</option><option value="open">Open</option><option value="pending">Pending</option><option value="closed">Closed</option></select></label>
+    <p id="summary" role="status"></p><ul id="tickets"></ul>
+    <nav aria-label="Pagination"><button id="prev">Previous</button><span id="position"></span><button id="next">Next</button></nav>
+  </main>
+  <script>
+    const filter = document.getElementById("filter");
+    const previous = document.getElementById("prev");
+    const next = document.getElementById("next");
+    let page = 1;
+    let generation = 0;
+    async function load() {
+      const current = ++generation;
+      previous.disabled = next.disabled = true;
+      try {
+        const response = await fetch("/api/tickets?" + new URLSearchParams({status:filter.value,page:String(page),page_size:"3"}));
+        if (!response.ok) throw Error("Could not load the ticket queue.");
+        const data = await response.json();
+        if (current !== generation) return;
+        document.getElementById("summary").textContent = data.count + " matching tickets";
+        document.getElementById("position").textContent = "Page " + page;
+        document.getElementById("tickets").replaceChildren(...data.results.map((ticket) => {
+          const li = document.createElement("li");
+          const status = document.createElement("small");
+          status.textContent = ticket.status;
+          li.append(ticket.title, status);
+          return li;
+        }));
+        previous.disabled = page === 1;
+        next.disabled = page * data.page_size >= data.count;
+      } catch (error) {
+        if (current === generation) document.getElementById("summary").textContent = error.message;
+      }
+    }
+    previous.onclick = () => { page--; load(); };
+    next.onclick = () => { page++; load(); };
+    filter.onchange = () => { page = 1; load(); };
+    load();
+  </script>
+</body></html>

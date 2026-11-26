@@ -1,0 +1,166 @@
+{
+  "authors": [
+    {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "bio": "Backend developer writing about systems, APIs, and life on call."
+    },
+    {
+      "name": "Sarah Johnson",
+      "email": "sarah@example.com",
+      "bio": "A slow traveler collecting practical notes from the road."
+    },
+    {
+      "name": "Mike Chen",
+      "email": "mike@example.com",
+      "bio": "Cook and recipe tester interested in the techniques behind everyday food."
+    },
+    {
+      "name": "Emma Wilson",
+      "email": "emma@example.com",
+      "bio": "Writer exploring the routines that make room for a creative life."
+    }
+  ],
+  "posts": [
+    {
+      "email": "sarah@example.com",
+      "title": "A Field Guide to Southeast Asia",
+      "category": "Travel",
+      "read_time": 7,
+      "tags": [
+        "Travel",
+        "Southeast Asia",
+        "Itineraries",
+        "Culture"
+      ],
+      "excerpt": "A slow itinerary through neighborhood markets and railway towns, with a few notes on getting there.",
+      "content": "# A Field Guide to Southeast Asia\n\nA slow itinerary through neighborhood markets and railway towns, with a few notes on getting there.\n\n## Arrive before the rush\n\nEarly trains bring the best conversations. Leave the morning open, walk the platform, and ask a stallholder what people order for breakfast. Write the route down while the details are fresh.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    },
+    {
+      "email": "john@example.com",
+      "title": "Building Scalable Microservices",
+      "category": "Technology",
+      "read_time": 12,
+      "tags": [
+        "Microservices",
+        "Architecture",
+        "APIs",
+        "Testing"
+      ],
+      "excerpt": "Trace a request across a small system and discover which contracts, timeouts, and tests make it dependable.",
+      "content": "# Building Scalable Microservices\n\nTrace a request across a small system and discover which contracts, timeouts, and tests make it dependable.\n\n## Follow one request\n\nDraw the call chain for one customer action. Record the owner and timeout at each boundary. A request ID shared by the services makes it possible to reconstruct the story after an incident.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    },
+    {
+      "email": "john@example.com",
+      "title": "The Future of Web Development",
+      "category": "Technology",
+      "read_time": 10,
+      "tags": [
+        "Web Development",
+        "Frontend",
+        "Performance",
+        "Tooling"
+      ],
+      "excerpt": "A tour of practical changes in browser tooling, accessible components, and server rendering for working web teams.",
+      "content": "# The Future of Web Development\n\nA tour of practical changes in browser tooling, accessible components, and server rendering for working web teams.\n\n## Measure the first interaction\n\nObserve a real visit before adding another dependency. Network timing tells you which resources block the view, while interaction traces show which updates keep the page from responding.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    },
+    {
+      "email": "john@example.com",
+      "title": "Getting Started with React Hooks",
+      "category": "Technology",
+      "read_time": 8,
+      "tags": [
+        "React",
+        "JavaScript",
+        "Frontend",
+        "Hooks"
+      ],
+      "excerpt": "Hooks connect component state to the events that change it. A small example makes the dependency array and cleanup behavior easier to inspect.",
+      "content": "# Getting Started with React Hooks\n\nHooks connect component state to the events that change it. A small example makes the dependency array and cleanup behavior easier to inspect.\n\n## A sensor on the screen\n\nStart with one input, such as a value typed into a search box. Store it in state and log the render where it changes. Add an effect only when a value must stay synchronized with something outside React.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    },
+    {
+      "email": "emma@example.com",
+      "title": "Minimalism: Less is More",
+      "category": "Lifestyle",
+      "read_time": 9,
+      "tags": [
+        "Minimalism",
+        "Design",
+        "Home",
+        "Habits"
+      ],
+      "excerpt": "A room-by-room guide to choosing fewer things and making better use of the ones that remain.",
+      "content": "# Minimalism: Less is More\n\nA room-by-room guide to choosing fewer things and making better use of the ones that remain.\n\n## Start with one shelf\n\nClear a single shelf and replace only what you used in the past week. Keep a note of the items you miss before deciding what belongs there permanently.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    },
+    {
+      "email": "emma@example.com",
+      "title": "A Sustainable Morning Routine",
+      "category": "Lifestyle",
+      "read_time": 8,
+      "tags": [
+        "Routines",
+        "Habits",
+        "Wellness",
+        "Planning"
+      ],
+      "excerpt": "Build a morning routine that fits the life you have, starting with one repeatable habit.",
+      "content": "# A Sustainable Morning Routine\n\nBuild a morning routine that fits the life you have, starting with one repeatable habit.\n\n## Make tomorrow easier\n\nPut the kettle, cup, and notebook together before going to bed. By removing one decision in advance you make it easier to begin a routine when attention is scarce.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    },
+    {
+      "email": "emma@example.com",
+      "title": "Mindfulness in the Digital Age",
+      "category": "Lifestyle",
+      "read_time": 7,
+      "tags": [
+        "Mindfulness",
+        "Wellness",
+        "Habits",
+        "Attention"
+      ],
+      "excerpt": "A practical approach to keeping digital tools useful while finding a little more quiet during the day.",
+      "content": "# Mindfulness in the Digital Age\n\nA practical approach to keeping digital tools useful while finding a little more quiet during the day.\n\n## Give notifications a place\n\nMove alerts into a scheduled window. At lunch, walk outside for ten minutes and notice which tasks you still remember without a reminder.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    },
+    {
+      "email": "mike@example.com",
+      "title": "Street Food Around the World",
+      "category": "Food",
+      "read_time": 8,
+      "tags": [
+        "Street Food",
+        "Travel",
+        "Markets",
+        "Cooking"
+      ],
+      "excerpt": "Follow a market walk from a Bangkok noodle stand to a Marrakech grill, one generous plate at a time.",
+      "content": "# Street Food Around the World\n\nFollow a market walk from a Bangkok noodle stand to a Marrakech grill, one generous plate at a time.\n\n## Watch the busiest pan\n\nFollow the rhythm of the cooks before joining a queue. You will learn the menu from the movement of their tools and notice which ingredients are replenished throughout the evening.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    },
+    {
+      "email": "mike@example.com",
+      "title": "The Art of Perfect Pasta",
+      "category": "Food",
+      "read_time": 9,
+      "tags": [
+        "Cooking",
+        "Italian Cuisine",
+        "Pasta",
+        "Techniques"
+      ],
+      "excerpt": "Master pasta technique from salting the water to finishing each shape in just the right sauce.",
+      "content": "# The Art of Perfect Pasta\n\nMaster pasta technique from salting the water to finishing each shape in just the right sauce.\n\n## Finish in the pan\n\nLift the pasta a minute early and let its last minute happen in the sauce. A splash of cloudy cooking water loosens the pan while helping oil and starch come together.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    },
+    {
+      "email": "sarah@example.com",
+      "title": "Solo Travel: Self-Discovery",
+      "category": "Travel",
+      "read_time": 6,
+      "tags": [
+        "Travel",
+        "Adventure",
+        "Planning",
+        "Journal"
+      ],
+      "excerpt": "Discover how solo travel builds confidence through small decisions, unfamiliar streets, and unexpected conversations.",
+      "content": "# Solo Travel: Self-Discovery\n\nDiscover how solo travel builds confidence through small decisions, unfamiliar streets, and unexpected conversations.\n\n## Keep a simple rhythm\n\nChoose one place to explore each morning and keep the afternoon loose. A notebook, a modest budget, and the name of the nearest station are often enough to find your way home.\n\n## Try it yourself\n\nChoose one detail above and make a small change today. Record what you observe and come back to it after a week."
+    }
+  ]
+}

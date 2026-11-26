@@ -1,0 +1,43 @@
+{
+  "name": "acis",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local AI-assisted repository interview practice",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "mock": "node bin/acis.mjs mock",
+    "problem:new": "node bin/acis.mjs new",
+    "problem:validate": "node bin/acis.mjs validate",
+    "doctor": "node bin/acis.mjs doctor",
+    "build": "vite build --config vite.config.ts",
+    "lint": "eslint .",
+    "lint:docs": "markdownlint-cli2",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs runtime/runtime.test.mjs",
+    "test:e2e": "playwright test --config playwright.config.ts"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "fast-xml-parser": "^5.3.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "eslint": "^9.32.0",
+    "globals": "^16.3.0",
+    "markdownlint-cli2": "^0.20.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.38.0",
+    "vite": "^7.1.0"
+  }
+}

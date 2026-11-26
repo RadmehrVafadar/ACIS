@@ -1,0 +1,22 @@
+diff --git a/backend/controllers/postController.js b/backend/controllers/postController.js
+--- a/backend/controllers/postController.js
++++ b/backend/controllers/postController.js
+@@ -14,15 +14,14 @@
+ }
+ 
+ export async function createPost(req, res) {
+-  const { title, content, category, excerpt, tags, readTime } = req.body;
+   const post = new Post({
+     title, content, category, author: req.get("x-user-id"),
+-    excerpt: excerpt || content.slice(0, 150),
++    excerpt,
+     tags: tags ?? [], readTime: readTime ?? Math.ceil(content.trim().split(/\s+/).length / 200),
+   });
+-  await post.save();
++  await post.this.save();
+   await post.populate("author", profile);
+-  res.status(201).json({ message: "Post created successfully", post });
++  res.status(201).json({ message: "Post created successfully" });
+ }
+ 
+ export async function postDetail(req, res) {

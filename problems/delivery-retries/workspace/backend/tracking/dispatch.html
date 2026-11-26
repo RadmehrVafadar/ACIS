@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parcel dispatch</title>
+  <style>
+    * { box-sizing: border-box }
+    body { margin: 0; background: #f4f4ed; color: #1e332b; font: 1rem/1.5 system-ui,sans-serif }
+    main { max-width: 47rem; margin: auto; padding: clamp(1rem,5vw,3rem) }
+    h1 { font-size: clamp(2.2rem,8vw,3.4rem); letter-spacing: -.06em; margin: 0 0 1rem }
+    h2 { font-size: 1.15rem; margin: 0 0 .6rem }
+    p { margin: .4rem 0 1.2rem }
+    section { padding: 1.2rem 0; border-top: 1px solid #bac6bc }
+    .location { font-weight: 650; font-size: 1.3rem; margin: .7rem 0 0 }
+    form { display:flex; align-items:end; flex-wrap:wrap; gap:.7rem }
+    label { display:grid; gap:.25rem; font-size:.85rem; font-weight:620 }
+    input,select,button { border:1px solid #9faea3; border-radius:.4rem; background:white; padding:.55rem .7rem; font:inherit; color:inherit; max-width:100% }
+    button { cursor:pointer; font-weight:600 }
+    button[type=submit] { background:#204a39; border-color:#204a39; color:white }
+    ol { list-style:none; padding:0; margin:0 }
+    li { display:flex; min-width:0; align-items:center; justify-content:space-between; gap:.6rem; padding:.6rem 0; border-bottom:1px solid #d6dcd4 }
+    li span { min-width:0; overflow-wrap:anywhere }
+    small { display:block; color:#4f6256 }
+    output { display:block; min-height:1.5rem; margin-top:.7rem }
+    :focus-visible { outline:3px solid #ae641b; outline-offset:2px }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Parcel dispatch</h1>
+  <label>Tracking number <select id="parcel"></select></label>
+  <p class="location" id="position"></p>
+  <section>
+    <h2>Scan history</h2>
+    <p>Replay a scan to simulate a handset reconnecting.</p>
+    <ol id="history"></ol>
+  </section>
+  <section>
+    <h2>Record a scan</h2>
+    <form id="scanner">
+      <label>Event ID <input name="event_id" required maxlength="64" pattern="[-a-zA-Z0-9_]+" placeholder="scan-43"></label>
+      <label>Facility <input name="facility" required maxlength="80" placeholder="West Station"></label>
+      <button type="submit">Record scan</button>
+    </form>
+    <output id="notice" aria-live="polite"></output>
+  </section>
+</main>
+<script>
+  const parcel = document.querySelector('#parcel');
+  const historyList = document.querySelector('#history');
+  const notice = document.querySelector('#notice');
+  const scanner = document.querySelector('#scanner');
+  const endpoint = () => '/api/parcels/' + encodeURIComponent(parcel.value) + '/scans';
+
+  async function refresh() {
+    const url = endpoint();
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Unable to load this parcel.');
+    const data = await response.json();
+    if (endpoint() !== url) return;
+    document.querySelector('#position').textContent = 'Current facility: ' + (data.current_facility || 'No scans yet');
+    historyList.replaceChildren();
+    for (const scan of data.scans) {
+      const row = document.createElement('li');
+      const label = document.createElement('span');
+      const id = document.createElement('small');
+      label.textContent = scan.facility;
+      id.textContent = scan.event_id;
+      label.append(id);
+      const replay = document.createElement('button');
+      replay.textContent = 'Replay';
+      replay.setAttribute('aria-label', 'Replay ' + scan.event_id);
+      replay.onclick = () => record({event_id:scan.event_id, facility:scan.facility}).catch(showError);
+      row.append(label, replay);
+      historyList.append(row);
+    }
+  }
+  function showError(error) { notice.textContent = error.message; }
+  async function record(payload) {
+    const url = endpoint();
+    const response = await fetch(url, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+    });
+    const result = await response.json();
+    if (url !== endpoint()) return;
+    notice.textContent = 'HTTP ' + response.status + ' · ' + (result.detail || result.event_id || 'Check scan fields');
+    await refresh();
+  }
+  scanner.onsubmit = event => {
+    event.preventDefault();
+    record(Object.fromEntries(new FormData(scanner))).catch(showError);
+  };
+  parcel.onchange = () => { notice.textContent=''; refresh().catch(showError); };
+  async function start() {
+    const response = await fetch('/api/parcels');
+    if (!response.ok) throw new Error('Unable to load parcels.');
+    const data = await response.json();
+    for (const number of data.parcels) parcel.add(new Option(number,number));
+    if (parcel.value) await refresh();
+  }
+  start().catch(showError);
+</script>
+</body>
+</html>

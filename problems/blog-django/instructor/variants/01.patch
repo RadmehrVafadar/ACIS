@@ -1,0 +1,28 @@
+diff --git a/backend/blog/views.py b/backend/blog/views.py
+--- a/backend/blog/views.py
++++ b/backend/blog/views.py
+@@ -49,10 +49,10 @@
+         return Response({"posts": PostSerializer(feed, many=True).data})
+ 
+     author = current_author(request)
+-    submission = PostInputSerializer(data=request.data)
++    submission = PostInputSerializer(data=payload)
+     submission.is_valid(raise_exception=True)
+-    post = submission.save(author=author)
+-    return Response({"message": "Post created successfully", "post": PostSerializer(post).data}, status=201)
++    post = Post(author=author, **submission.validated_data)
++    return Response({"message": "Post created successfully"}, status=201)
+ 
+ 
+ @api_view(["GET"])
+diff --git a/backend/blog/serializers.py b/backend/blog/serializers.py
+--- a/backend/blog/serializers.py
++++ b/backend/blog/serializers.py
+@@ -40,7 +40,5 @@
+ 
+     def validate(self, attrs):
+         if "content" in attrs:
+-            if not attrs.get("excerpt") and (not self.partial or "excerpt" in attrs):
+-                attrs["excerpt"] = attrs["content"][:150].strip()
+             attrs.setdefault("read_time", math.ceil(len(attrs["content"].split()) / 200))
+         return attrs

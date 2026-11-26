@@ -1,0 +1,48 @@
+{
+  "id": "delivery-retries",
+  "title": "Parcel Scan Replays",
+  "description": "Trace why replaying an offline scanner event moves a parcel back to a previous depot.",
+  "runtime": "django",
+  "database": "postgres",
+  "durationMinutes": 45,
+  "ports": [
+    {
+      "port": 8080,
+      "label": "Dispatch",
+      "path": "/"
+    }
+  ],
+  "protected": [
+    "README.md",
+    "setup.sh",
+    "seed.sh",
+    "test.sh",
+    "requirements.txt",
+    "pytest.ini",
+    "backend/config/settings.py",
+    "backend/tracking/management/commands/seed.py",
+    "backend/tracking/tests/test_scans.py"
+  ],
+  "variants": [
+    {
+      "id": "01",
+      "failures": 2
+    }
+  ],
+  "install": [
+    "bash",
+    "setup.sh"
+  ],
+  "seed": [
+    "bash",
+    "seed.sh"
+  ],
+  "run": [
+    "bash",
+    "run.sh"
+  ],
+  "test": [
+    "bash",
+    "test.sh"
+  ]
+}

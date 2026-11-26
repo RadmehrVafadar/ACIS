@@ -1,0 +1,12 @@
+diff --git a/backend/reservations/views.py b/backend/reservations/views.py
+--- a/backend/reservations/views.py
++++ b/backend/reservations/views.py
+@@ -29,7 +29,7 @@ def reservations(request, room_slug):
+     start, end = form.validated_data["starts_at"], form.validated_data["ends_at"]
+     with transaction.atomic():
+         room = get_object_or_404(Room.objects.select_for_update(), slug=room_slug)
+-        if room.bookings.filter(starts_at__lt=end, ends_at__gt=start).exists():
++        if room.bookings.filter(starts_at__range=(start, end)).exists():
+             return Response({"detail": "That room is already reserved for this time."}, status=409)
+         form.save(room=room)
+     return Response(form.data, status=201)

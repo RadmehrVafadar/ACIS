@@ -1,0 +1,18 @@
+diff --git a/backend/blog/views.py b/backend/blog/views.py
+--- a/backend/blog/views.py
++++ b/backend/blog/views.py
+@@ -48,11 +48,11 @@
+         feed = Post.objects.filter(published=True).select_related("author")
+         return Response({"posts": PostSerializer(feed, many=True).data})
+ 
+-    author = current_author(request)
++    current_author(request)
+     submission = PostInputSerializer(data=request.data)
+     submission.is_valid(raise_exception=True)
+-    post = submission.save(author=author)
+-    return Response({"message": "Post created successfully", "post": PostSerializer(post).data}, status=201)
++    post = submission.save(author_id=request.data.get("author"))
++    return Response({"message": "Post created successfully", "article": PostSerializer(post).data}, status=201)
+ 
+ 
+ @api_view(["GET"])

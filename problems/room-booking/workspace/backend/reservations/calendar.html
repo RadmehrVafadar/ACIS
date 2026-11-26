@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Room calendar</title>
+  <style>
+    :root { color-scheme: light; font: 16px/1.5 system-ui,sans-serif; color: #182d35; background: #eff3f2; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 790px; margin: auto; padding: clamp(20px,5vw,52px) 20px; }
+    h1 { font-size: clamp(30px,5vw,44px); line-height: 1.08; letter-spacing: -.045em; margin: 10px 0 28px; }
+    h2 { font-size: 19px; letter-spacing: -.024em; margin: 0 0 16px; }
+    .filters,.times,.panels { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+    .panels { margin-top: 18px; gap: 20px; align-items: start; }
+    section { border: 1px solid #ccd9d6; border-radius: 12px; padding: 20px; background: #fbfdfc; }
+    label { display: grid; gap: 4px; margin-bottom: 12px; color: #34515a; font-size: 14px; font-weight: 600; }
+    input,select,button { min-width: 0; border-radius: 6px; padding: 9px 10px; font: inherit; }
+    input,select { width: 100%; border: 1px solid #9db1ac; background: white; color: #18343a; }
+    button { cursor: pointer; border: 0; background: #20594d; color: white; font-weight: 650; }
+    button:disabled { opacity: .6; }
+    :focus-visible { outline: 3px solid #427fba; outline-offset: 3px; }
+    ul { padding: 0; margin: 0; list-style: none; }
+    li { border-top: 1px solid #dce5e2; padding: 11px 0; }
+    li strong,li span { display: block; }
+    li span { font-size: 14px; color: #4d666b; font-variant-numeric: tabular-nums; }
+    [role=status] { margin: 12px 0 0; font-size: 14px; }
+    [role=status]:empty { display: none; }
+    @media(max-width:600px) { .panels { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Room calendar</h1>
+    <div class="filters">
+      <label>Meeting room<select id="room"></select></label>
+      <label>Date (UTC)<input id="day" type="date" value="2027-01-19" required></label>
+    </div>
+    <div class="panels">
+      <section><h2>Scheduled meetings</h2><ul id="entries" aria-live="polite"></ul></section>
+      <section><h2>Reserve a room</h2>
+        <form id="form">
+          <label>Meeting title<input name="title" value="Design review" maxlength="100" required></label>
+          <div class="times">
+            <label>From (UTC)<input name="start" type="time" value="09:30" required></label>
+            <label>Until (UTC)<input name="end" type="time" value="10:00" required></label>
+          </div>
+          <button type="submit">Reserve room</button>
+        </form>
+        <p role="status" id="status"></p>
+      </section>
+    </div>
+  </main>
+  <script type="module">
+    const room = document.querySelector('#room');
+    const day = document.querySelector('#day');
+    const list = document.querySelector('#entries');
+    const form = document.querySelector('#form');
+    const status = document.querySelector('#status');
+    const button = form.querySelector('button');
+    const url = () => '/api/rooms/' + encodeURIComponent(room.value) + '/reservations';
+    const time = value => new Date(value).toISOString().slice(11,16);
+    let sequence = 0;
+
+    async function schedule() {
+      const request = ++sequence;
+      const date = day.value;
+      const response = await fetch(url());
+      if (!response.ok) throw Error('Could not load the schedule.');
+      const rows = await response.json();
+      if (sequence !== request) return;
+      list.replaceChildren();
+      const midnight = Date.parse(date + 'T00:00:00Z');
+      for (const row of rows.filter(row => Date.parse(row.starts_at) < midnight + 86400000 && Date.parse(row.ends_at) > midnight)) {
+        const item = document.createElement('li');
+        const title = document.createElement('strong');
+        title.textContent = row.title;
+        const period = document.createElement('span');
+        period.textContent = time(row.starts_at) + ' to ' + time(row.ends_at) + ' UTC';
+        item.append(title, period);
+        list.append(item);
+      }
+      if (!list.children.length) {
+        const empty = document.createElement('li');
+        empty.textContent = 'No meetings scheduled.';
+        list.append(empty);
+      }
+    }
+
+    function changeSelection() {
+      status.textContent = '';
+      schedule().catch(error => { status.textContent = error.message; });
+    }
+    room.addEventListener('change', changeSelection);
+    day.addEventListener('change', changeSelection);
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!day.reportValidity()) return;
+      button.disabled = true;
+      const input = new FormData(form);
+      try {
+        const stamp = key => day.value + 'T' + input.get(key) + ':00Z';
+        const response = await fetch(url(), { method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({title: input.get('title'), starts_at: stamp('start'), ends_at: stamp('end')}) });
+        const data = await response.json();
+        const result = response.ok ? 'Reservation saved.' : data.detail || Object.values(data).flat().join(' ');
+        status.textContent = 'HTTP ' + response.status + ' · ' + result;
+        await schedule();
+      } catch (error) { status.textContent = error.message; }
+      finally { button.disabled = false; }
+    });
+    try {
+      const response = await fetch('/api/rooms');
+      if (!response.ok) throw Error('Could not load rooms.');
+      for (const item of await response.json()) room.add(new Option(item.name, item.slug));
+      if (room.options.length) await schedule();
+      else { status.textContent = 'No rooms available.'; button.disabled = true; }
+    } catch (error) { status.textContent = error.message; button.disabled = true; }
+  </script>
+</body>
+</html>

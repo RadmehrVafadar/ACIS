@@ -1,0 +1,17 @@
+diff --git a/backend/tracking/views.py b/backend/tracking/views.py
+--- a/backend/tracking/views.py
++++ b/backend/tracking/views.py
+@@ -44,11 +44,8 @@ def scans(request, tracking_number):
+         scan, created = Scan.objects.get_or_create(
+             parcel=parcel, event_id=event_id, defaults={"facility": facility}
+         )
+-        if not created and scan.facility != facility:
+-            return Response({"detail": "This event ID already records another facility."}, status=409)
+-        if created:
+-            parcel.current_facility = facility
+-            parcel.save(update_fields=["current_facility"])
++        parcel.current_facility = facility
++        parcel.save(update_fields=["current_facility"])
+     return Response(
+         {"event_id": scan.event_id, "facility": scan.facility, "received_at": scan.received_at},
+         status=201 if created else 200,

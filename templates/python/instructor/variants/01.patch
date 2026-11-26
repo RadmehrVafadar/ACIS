@@ -1,0 +1,7 @@
+diff --git a/queue_app.py b/queue_app.py
+--- a/queue_app.py
++++ b/queue_app.py
+@@ -1,2 +1,2 @@
+ def unread(items):
+-    return [item for item in items if not item["read"]]
++    return [item for item in items if item["read"]]
