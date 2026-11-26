@@ -1,4 +1,4 @@
-# ACIS Interview Practice
+# AI Coding Interview Studio
 
 Practice a timed AI-assisted coding interview in a real browser IDE with editable Django code, PostgreSQL, a terminal, and executable tests.
 

@@ -34,6 +34,7 @@ import { Workbench } from './Workbench';
 import { Dialog, IconButton, Mark, Spinner, Timer } from './ui';
 
 type Modal = 'settings' | 'instructions' | 'reset' | 'reset-data' | 'submit' | null;
+const studioName = 'AI Coding Interview Studio';
 const empty: Catalog = { problems: [], attempts: [], providers: [] };
 export default function App() {
   const [route, setRoute] = useState<Route>(readRoute),
@@ -164,7 +165,7 @@ export default function App() {
     writeLocal('acis-coach', settings);
   }, [settings]);
   useEffect(() => {
-    document.title = (attempt?.title ? attempt.title + ' · ' : '') + 'ACIS Interview Practice';
+    document.title = attempt?.title ? attempt.title + ' · ' + studioName : studioName;
   }, [attempt?.title]);
   useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), 500);
@@ -245,11 +246,11 @@ export default function App() {
       <header className="topbar">
         <button
           className="brand"
-          aria-label="Practice library"
+          aria-label={studioName + ' - Practice library'}
           onClick={() => navigate(null)}
         >
           <Mark />
-          <span>ACIS</span>
+          <span>{studioName}</span>
         </button>
         {currentAttempt && currentAttempt.status !== 'review' && (
           <Timer

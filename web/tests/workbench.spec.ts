@@ -157,7 +157,7 @@ test('a learner can resume a running attempt above the phone catalog', async ({
   const { attempt } = await routeWorkbench(context);
   attempt.status = 'active';
   attempt.deadline = Date.now() + 3600000;
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 320, height: 844 });
   await page.goto(origin);
   const resume = page.getByRole('button', { name: 'Resume Post Creation' });
   await expect(resume).toBeInViewport();
@@ -165,6 +165,7 @@ test('a learner can resume a running attempt above the phone catalog', async ({
   await expect(history.getByRole('button', { name: /Post Creation Django · In progress/ })).toBeVisible();
   await resume.click();
   await expect(page.locator('iframe[title="Code editor"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save & Proceed' })).toBeInViewport({ ratio: 1 });
 });
 
 test('polling preserves editor and chat focus; grading, contextual coaching and submission use the active tab', async ({

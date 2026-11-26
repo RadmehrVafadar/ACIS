@@ -21,11 +21,13 @@ test('the default launcher opens the library and the learner can prepare a chose
   expect(launcher.trim()).toBe('ACIS is open at ' + address.origin);
   expect(await attempts()).toBe(before);
   await page.goto('/');
-  await expect(page.locator('.topbar')).not.toContainText('AI interview studio');
+  await expect(page).toHaveTitle('AI Coding Interview Studio');
+  const home = page.getByRole('button', { name: 'AI Coding Interview Studio - Practice library' });
+  await expect(home).toHaveText('AI Coding Interview Studio');
   await expect(page.getByRole('searchbox')).toHaveAttribute('data-slot', 'input');
   await expect(page.getByLabel('Filter by stack')).toHaveAttribute('data-slot', 'native-select');
   await expect(page.getByRole('heading', { name: 'Practice library' })).toBeVisible();
-  const logo = page.getByRole('button', { name: 'Practice library' }).locator('img');
+  const logo = home.locator('img');
   await expect
     .poll(() => logo.evaluate((img) => (img as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0);

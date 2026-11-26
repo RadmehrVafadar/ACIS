@@ -184,8 +184,8 @@ code {
   }
 }
 .topbar {
-  height: 58px;
   min-height: 58px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 20px;
@@ -198,18 +198,21 @@ code {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   padding: 4px 0;
   color: var(--text);
   font-weight: 760;
-  font-size: 18px;
+  font-size: 20px;
   letter-spacing: -0.035em;
-  line-height: 1;
+  line-height: 1.15;
+  text-align: left;
+  text-wrap: balance;
 }
 .brand-mark {
   width: 40px;
   height: 40px;
   object-fit: contain;
+  flex: none;
 }
 .top-actions,
 .tool-group,
@@ -1385,7 +1388,6 @@ iframe {
   .topbar {
     padding: 0 10px;
     gap: 11px;
-    height: 49px;
     min-height: 49px;
   }
   .top-actions {
@@ -1409,8 +1411,8 @@ iframe {
     gap: 5px;
   }
   .brand-mark {
-    width: 25px;
-    height: 25px;
+    width: 33px;
+    height: 33px;
   }
   .desk-toolbar {
     padding: 2px 4px;
@@ -1449,6 +1451,20 @@ iframe {
   }
   .error-banner {
     font-size: 11px;
+  }
+}
+@media (max-width: 460px) {
+  .topbar:has(.header-action) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 8px;
+    padding-block: 4px 8px;
+  }
+  .topbar:has(.header-action) .brand {
+    grid-column: 1 / -1;
+  }
+  .topbar:has(.header-action) :is(.brand, .timer) {
+    justify-self: start;
   }
 }
 @media (max-width: 410px) {
@@ -1769,13 +1785,6 @@ select[data-slot='native-select'] {
 .question-body h1 {
   font-size: clamp(23px, 2.1vw, 30px);
 }
-.brand {
-  gap: 9px;
-  font-size: 20px;
-}
-.brand-mark {
-  flex: none;
-}
 @media (max-width: 719px) {
   .launch-layout {
     grid-template-columns: 1fr;
@@ -1787,10 +1796,6 @@ select[data-slot='native-select'] {
   }
   .desk-toolbar {
     padding-inline: 6px;
-  }
-  .brand-mark {
-    width: 33px;
-    height: 33px;
   }
 }
 @media (max-width: 410px) {

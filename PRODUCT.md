@@ -1,4 +1,4 @@
-# ACIS Interview Practice
+# AI Coding Interview Studio
 
 ACIS is a local web app for practicing AI-assisted debugging interviews in a real repository.
 The primary workflow is to pick a problem from the library, read the brief, start the timer, reproduce the issue, edit code, and verify the repair.
