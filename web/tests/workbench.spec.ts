@@ -12,8 +12,9 @@ const pack = {
   runtime: 'django',
   durationMinutes: 60,
 };
+const nodePack = { ...pack, id: 'blog-node', title: 'Express publishing', runtime: 'node' };
 
-async function routeWorkbench(context: BrowserContext) {
+async function routeWorkbench(context: BrowserContext, problems: Catalog['problems'] = [pack]) {
   const attempt: Attempt = {
     id: 'test-attempt',
     problemId: pack.id,
@@ -40,7 +41,7 @@ async function routeWorkbench(context: BrowserContext) {
     chats: [],
   };
   const catalog: Catalog = {
-    problems: [pack],
+    problems,
     attempts: [attempt],
     providers: [
       { id: 'codex', label: 'Codex CLI', model: '', available: true },
@@ -150,6 +151,98 @@ async function take(page: Page, info: TestInfo, name: string) {
   await info.attach(name, { path, contentType: 'image/png' });
 }
 
+test('the catalog animates a filter change that keeps the same featured exercise', async ({
+  page,
+  context,
+}) => {
+  await routeWorkbench(context, [pack, nodePack]);
+  const stack = page.getByRole('combobox', { name: 'Filter by stack' });
+  const list = page.locator('.catalog-list');
+
+  for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto(origin);
+    await expect(list.getByRole('button')).toHaveCount(2);
+    await list.evaluate(async (element) => {
+      await Promise.all(element.getAnimations().map((animation) => animation.finished));
+      const observer = new MutationObserver(() => {
+        observer.disconnect();
+        element.setAttribute('data-filter-motion', String(element.getAnimations().length > 0));
+      });
+      observer.observe(element, { childList: true });
+    });
+    await stack.selectOption('django');
+    await expect(list.getByRole('button', { name: /Post Creation/ })).toBeVisible();
+    await expect(list.getByRole('button')).toHaveCount(1);
+    await expect(list).toHaveAttribute('data-filter-motion', String(reducedMotion === 'no-preference'), {
+      timeout: 1500,
+    });
+  }
+});
+
+test('a newly featured exercise switches colors immediately and dims when selected', async ({
+  page,
+  context,
+}) => {
+  await routeWorkbench(context, [pack, nodePack]);
+  let finishCreate = () => {};
+  const creating = new Promise<void>((resolve) => {
+    finishCreate = resolve;
+  });
+  await page.route('**/api/attempts', async (route) => {
+    await creating;
+    await route.abort();
+  });
+
+  try {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto(origin);
+    const tile = page.getByRole('button', { name: /Express publishing/ });
+    await tile.evaluate((button) => {
+      const observer = new MutationObserver(() => {
+        if (!button.matches(':first-child')) return;
+        observer.disconnect();
+        button.setAttribute('data-promoted-background', getComputedStyle(button).backgroundColor);
+      });
+      observer.observe(button.parentElement!, { childList: true });
+    });
+    await page.getByRole('searchbox').fill('Express');
+    const settledBackground = await tile.evaluate(async (button) => {
+      await Promise.all(button.getAnimations().map((animation) => animation.finished));
+      return getComputedStyle(button).backgroundColor;
+    });
+    expect(await tile.getAttribute('data-promoted-background')).toBe(settledBackground);
+
+    await tile.click();
+    await expect(tile).toBeDisabled();
+    await expect(tile).toHaveCSS('opacity', '0.45', { timeout: 2000 });
+  } finally {
+    finishCreate();
+  }
+});
+
+test('menus and dialogs follow the system motion preference', async ({ page, context }) => {
+  await routeWorkbench(context);
+  await page.goto(origin);
+  const help = page.getByRole('button', { name: 'Help and settings' });
+  const dialog = page.getByRole('dialog', { name: 'Test instructions' });
+
+  for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+    await page.emulateMedia({ reducedMotion });
+    if (reducedMotion === 'reduce') {
+      await expect(page.locator('.exercise-copy > span')).toHaveCSS('transition-duration', '0s');
+    }
+    const animation = reducedMotion === 'reduce' ? 'none' : 'surface-enter';
+    await help.press('Enter');
+    await expect(page.locator('.help-menu')).toHaveCSS('animation-name', animation);
+    await page.getByRole('button', { name: 'Test instructions' }).press('Enter');
+    await expect(dialog).toHaveCSS('animation-name', animation);
+    await expect(dialog.getByRole('button', { name: 'Close dialog' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+  }
+});
+
 test('a learner can resume a running attempt above the phone catalog', async ({
   page,
   context,
@@ -159,10 +252,15 @@ test('a learner can resume a running attempt above the phone catalog', async ({
   attempt.deadline = Date.now() + 3600000;
   await page.setViewportSize({ width: 320, height: 844 });
   await page.goto(origin);
-  const resume = page.getByRole('button', { name: 'Resume Post Creation' });
+  const resume = page.getByRole('button', { name: 'Resume', exact: true });
   await expect(resume).toBeInViewport();
   const history = page.getByRole('complementary', { name: 'Recent attempts' });
-  await expect(history.getByRole('button', { name: /Post Creation Django · In progress/ })).toBeVisible();
+  const entry = history.getByRole('button', { name: 'Post Creation Django In progress', exact: true });
+  await expect(entry).toBeVisible();
+  const stack = await entry.getByText('Django', { exact: true }).boundingBox();
+  const status = await entry.getByText('In progress', { exact: true }).boundingBox();
+  expect(stack!.x + stack!.width).toBeLessThan(status!.x);
+  expect(Math.abs(stack!.y + stack!.height / 2 - status!.y - status!.height / 2)).toBeLessThan(2);
   await resume.click();
   await expect(page.locator('iframe[title="Code editor"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save & Proceed' })).toBeInViewport({ ratio: 1 });

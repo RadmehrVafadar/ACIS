@@ -165,7 +165,7 @@ export default function App() {
     writeLocal('acis-coach', settings);
   }, [settings]);
   useEffect(() => {
-    document.title = attempt?.title ? attempt.title + ' · ' + studioName : studioName;
+    document.title = attempt?.title ? attempt.title + ' - ' + studioName : studioName;
   }, [attempt?.title]);
   useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), 500);
@@ -234,6 +234,7 @@ export default function App() {
       : 'Configure a provider or practice without the assistant.';
   const isLeasable = attempt?.status === 'active' || attempt?.status === 'ready';
   const currentAttempt = attempt && attempt.id === route.id ? attempt : null;
+  const Bar = route.id ? 'header' : 'div';
   async function confirmed() {
     if (!modal) return;
     if (await action(modal)) {
@@ -243,15 +244,17 @@ export default function App() {
   }
   return (
     <div className={'app ' + (inEditor ? 'in-workbench' : '')}>
-      <header className="topbar">
-        <button
-          className="brand"
-          aria-label={studioName + ' - Practice library'}
-          onClick={() => navigate(null)}
-        >
-          <Mark />
-          <span>{studioName}</span>
-        </button>
+      <Bar className={route.id ? 'topbar' : 'library-tools'}>
+        {route.id && (
+          <button
+            className="brand"
+            aria-label={studioName + ' - Practice library'}
+            onClick={() => navigate(null)}
+          >
+            <Mark />
+            <span>{studioName}</span>
+          </button>
+        )}
         {currentAttempt && currentAttempt.status !== 'review' && (
           <Timer
             deadline={currentAttempt.deadline}
@@ -259,8 +262,9 @@ export default function App() {
             now={now}
           />
         )}
-        <div className="top-actions">
+        <div className="top-actions" role="group" aria-label="Studio controls">
           <span
+            role="img"
             className={'connection ' + (connectionError ? 'offline' : '')}
             title={connectionError ? 'Reconnecting to local runtime' : 'Connected to local runtime'}
             aria-label={connectionError ? 'Disconnected' : 'Connected'}
@@ -333,7 +337,7 @@ export default function App() {
               </Button>
             ))}
         </div>
-      </header>
+      </Bar>
       {error && (
         <div className="error-banner" role="alert">
           <CircleAlert size={16} />
@@ -365,7 +369,7 @@ export default function App() {
           <Library
             catalog={catalog}
             creating={busy}
-            onCreate={(id, seed) => void create(id, seed)}
+            onCreate={(id) => void create(id)}
             onOpen={(id) => navigate(id)}
           />
         ) : (

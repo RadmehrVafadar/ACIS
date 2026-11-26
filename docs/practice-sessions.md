@@ -18,8 +18,8 @@ Set `ACIS_PORT` on the host to choose a different port.
 | `npm run mock -- --problem blog-django --seed 1 --no-open` | Prepare another Django variant and print its local URL. |
 
 Choosing an exercise creates a new attempt and cycles through that pack's variants.
-Use **Replay by seed** before choosing an exercise to request a particular starter.
-Select an item in **Recent attempts** to reopen its existing files and timer.
+To request a particular starter, pass `--problem` and `--seed` to the launcher.
+Select **Resume** to reopen the most recent active interview, or choose a specific session from **Recent attempts**.
 The same seed in the same pack version recreates the same starting code with fresh application data.
 Opening or preparing an attempt leaves the timer at its full allocation.
 
