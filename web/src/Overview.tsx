@@ -11,7 +11,6 @@ import {
   Clock3,
   Code,
   GitBranch,
-  History,
   ListFilter,
   Search,
   SlidersHorizontal,
@@ -87,7 +86,7 @@ export function Library({
       <header className="library-heading">
         <div>
           <h1>
-            Practice <em>library</em>
+            Practice <span>library</span>
           </h1>
           <p>Investigate a bug, test a fix, and compare notes with your AI coach.</p>
           {activeAttempt && (
@@ -198,27 +197,23 @@ export function Library({
           )}
         </div>
       </section>
-      <aside className="recent-panel">
+      <aside className="recent-panel" aria-labelledby="recent-attempts">
         <div className="section-title">
-          <h2>
-            <History size={18} /> Recent attempts
-          </h2>
+          <h2 id="recent-attempts">Recent attempts</h2>
         </div>
         {attempts.length ? (
           <div className="attempt-list">
             {attempts.map((a) => (
               <button key={a.id} className="attempt-entry" onClick={() => onOpen(a.id)}>
-                <span className={'attempt-state state-' + a.status}>{statusLabel(a.status)}</span>
-                <strong>
-                  {a.title}{' '}
-                  <span className="attempt-stack">
-                    {stackNames.get(a.problemId) || a.problemId}
-                  </span>
-                </strong>
+                <strong>{a.title}</strong>
+                <span className="attempt-detail">
+                  {stackNames.get(a.problemId) || a.problemId}
+                  {' · '}
+                  <span className={'history-status-' + a.status}>{statusLabel(a.status)}</span>
+                </span>
                 <small>
                   {dateLabel(a.createdAt)} · Seed {a.seed}
                 </small>
-                <ChevronRight size={15} />
               </button>
             ))}
           </div>
