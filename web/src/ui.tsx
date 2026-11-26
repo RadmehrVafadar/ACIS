@@ -1,7 +1,14 @@
+import { Button } from '@/components/ui/button';
 import { useEffect, useId, useRef } from 'react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import Markdown from 'react-markdown';
-import { CheckCircle2, CircleX, Clock3, LoaderCircle, X } from 'lucide-react';
+import {
+  CircleCheck,
+  CircleX,
+  Clock3,
+  LoaderCircle,
+  X,
+} from '@keyline-icons/react/duotone';
 import { elapsedLabel, gradeLabel } from './model';
 import type { Grade } from './model';
 
@@ -15,7 +22,7 @@ export function IconButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string; children: ReactNode }) {
   return (
-    <button
+    <Button variant="ghost" size="icon"
       type="button"
       className={'icon-button ' + className}
       title={label}
@@ -23,7 +30,7 @@ export function IconButton({
       {...props}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 export function TextMarkdown({ text }: { text: string }) {
@@ -137,7 +144,7 @@ export function TestResults({
   if (!grade)
     return (
       <div className="blank">
-        <div className="blank-icon">{running ? <Spinner /> : <CheckCircle2 size={22} />}</div>
+        <div className="blank-icon">{running ? <Spinner /> : <CircleCheck size={22} />}</div>
         <h3>{running ? 'Running tests' : 'No test results yet'}</h3>
         <p>
           {running
@@ -176,7 +183,7 @@ export function TestResults({
         >
           <summary>
             {test.passed ? (
-              <CheckCircle2 size={16} className="good" />
+              <CircleCheck size={16} className="good" />
             ) : (
               <CircleX size={16} className="bad" />
             )}

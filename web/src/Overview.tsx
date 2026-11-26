@@ -1,45 +1,55 @@
+import { NativeSelect } from '@/components/ui/native-select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import {
   ArrowRight,
   BookOpen,
-  CalendarDays,
   Check,
   ChevronRight,
   CircleAlert,
   Clock3,
-  Code2,
-  FileCode2,
+  Code,
   GitBranch,
   History,
   ListFilter,
-  Newspaper,
-  PackageCheck,
-  ReceiptText,
   Search,
-  Settings2,
+  SlidersHorizontal,
   ShieldCheck,
   Sparkles,
-  Tickets,
   X,
-} from 'lucide-react';
+} from '@keyline-icons/react/duotone';
+import {
+  Braces,
+  Calculator,
+  CalendarClock,
+  Feather,
+  Layers3,
+  NotebookPen,
+  TruckFast,
+} from '@keyline-icons/react/fill';
 import { dateLabel, gradeLabel, runtimeName, statusLabel } from './model';
 import type { Attempt, Catalog } from './model';
 import { Spinner, TestResults, TextMarkdown } from './ui';
 
-const problemIcons = {
-  'room-booking': CalendarDays,
-  'delivery-retries': PackageCheck,
-  'invoice-totals': ReceiptText,
-  'ticket-pagination': Tickets,
-  'blog-django': Newspaper,
-  'blog-node': Newspaper,
+const covers = {
+  'room-booking': { icon: CalendarClock, topic: 'Scheduling' },
+  'delivery-retries': { icon: TruckFast, topic: 'Event processing' },
+  'invoice-totals': { icon: Calculator, topic: 'Billing' },
+  'ticket-pagination': { icon: Layers3, topic: 'API pagination' },
+  'blog-django': { icon: Feather, topic: 'Publishing' },
+  'blog-node': { icon: NotebookPen, topic: 'Publishing' },
 };
 
-function ProblemIcon({ id }: { id: string }) {
-  const Icon = problemIcons[id as keyof typeof problemIcons] || FileCode2;
+function ExerciseCover({ id }: { id: string }) {
+  const { icon: Icon, topic } = covers[id as keyof typeof covers] || {
+    icon: Braces,
+    topic: 'Debugging',
+  };
   return (
-    <span className={'problem-icon problem-' + id}>
-      <Icon size={21} />
+    <span className="exercise-cover">
+      <span>{topic}</span>
+      <Icon aria-hidden="true" />
     </span>
   );
 }
@@ -74,165 +84,161 @@ export function Library({
   const attempts = allAttempts ? catalog.attempts : catalog.attempts.slice(0, 4);
   return (
     <main className="page library">
-      <header className="studio-intro">
+      <header className="library-heading">
         <div>
-          <h1>Practice library</h1>
-          <p>
-            Debug a real codebase with an AI coach.
-            <br /> Choose an exercise and start the clock when you’re ready.
-          </p>
+          <h1>
+            Practice <em>library</em>
+          </h1>
+          <p>Investigate a bug, test a fix, and compare notes with your AI coach.</p>
           {activeAttempt && (
             <button className="resume-attempt" onClick={() => onOpen(activeAttempt.id)}>
               Resume {activeAttempt.title} <ArrowRight size={15} />
             </button>
           )}
         </div>
-        <img className="studio-sculpture" src="/studio-mark.png" alt="" />
       </header>
-      <div className="library-layout">
-        <section className="catalog-panel" aria-labelledby="exercises">
-          <div className="section-title">
-            <h2 id="exercises">
-              Exercises <span className="item-count">{filtered.length}</span>
-            </h2>
-            <button
-              className="link-button"
-              aria-expanded={replaying}
-              onClick={() => setReplaying(!replaying)}
-            >
-              Replay by seed
-            </button>
-          </div>
-          {replaying && (
-            <div className="seed-options">
-              <label>
-                Replay seed{' '}
-                <input
-                  value={seed}
-                  onChange={(e) => setSeed(e.target.value)}
-                  maxLength={64}
-                  placeholder="e.g. 42"
-                  aria-invalid={invalidSeed}
-                  aria-describedby="seed-help"
-                />
-              </label>
-              <small id="seed-help">
-                {invalidSeed
-                  ? 'Use letters, numbers, dots, hyphens, or underscores.'
-                  : 'Used for the next exercise you open.'}
-              </small>
-            </div>
-          )}
-          <div className="catalog-filters">
-            <label className="catalog-search">
-              <Search size={16} />
-              <input
-                type="search"
-                aria-label="Search exercises"
-                placeholder="Search exercises"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+      <section className="catalog-panel" aria-labelledby="exercises">
+        <div className="section-title">
+          <h2 id="exercises">
+            Exercises <span className="item-count">{filtered.length}</span>
+          </h2>
+          <button
+            className="link-button"
+            aria-expanded={replaying}
+            onClick={() => setReplaying(!replaying)}
+          >
+            Replay by seed
+          </button>
+        </div>
+        {replaying && (
+          <div className="seed-options">
+            <label>
+              Replay seed{' '}
+              <Input
+                value={seed}
+                onChange={(e) => setSeed(e.target.value)}
+                maxLength={64}
+                placeholder="e.g. 42"
+                aria-invalid={invalidSeed}
+                aria-describedby="seed-help"
               />
             </label>
-            <label className="runtime-filter">
-              <ListFilter size={15} />
-              <select
-                aria-label="Filter by stack"
-                value={runtime}
-                onChange={(e) => setRuntime(e.target.value)}
-              >
-                <option value="">All stacks</option>
-                {runtimes.map((r) => (
-                  <option key={r} value={r}>
-                    {runtimeName(r)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <small id="seed-help">
+              {invalidSeed
+                ? 'Use letters, numbers, dots, hyphens, or underscores.'
+                : 'Used for the next exercise you open.'}
+            </small>
           </div>
-          <div className="catalog-list">
-            {filtered.map((p) => (
-              <button
-                className="exercise-row"
-                key={p.id}
-                disabled={creating || invalidSeed}
-                onClick={() => onCreate(p.id, replaying ? seed.trim() || undefined : undefined)}
-              >
-                <ProblemIcon id={p.id} />
-                <span className="exercise-copy">
-                  <strong>{p.title}</strong>
-                  <span>{p.description}</span>
-                  <small>
-                    {runtimeName(p.runtime)} <i>·</i> {p.durationMinutes} min
-                  </small>
-                </span>
-                <ChevronRight className="exercise-open" size={17} />
+        )}
+        <div className="catalog-filters">
+          <label className="catalog-search">
+            <Search size={16} />
+            <Input
+              type="search"
+              aria-label="Search exercises"
+              placeholder="Search exercises"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+          <label className="runtime-filter">
+            <ListFilter size={15} />
+            <NativeSelect
+              aria-label="Filter by stack"
+              value={runtime}
+              onChange={(e) => setRuntime(e.target.value)}
+            >
+              <option value="">All stacks</option>
+              {runtimes.map((r) => (
+                <option key={r} value={r}>
+                  {runtimeName(r)}
+                </option>
+              ))}
+            </NativeSelect>
+          </label>
+        </div>
+        <div className="catalog-list">
+          {filtered.map((p) => (
+            <button
+              className={'exercise-tile problem-' + p.id}
+              key={p.id}
+              disabled={creating || invalidSeed}
+              onClick={() => onCreate(p.id, replaying ? seed.trim() || undefined : undefined)}
+            >
+              <ExerciseCover id={p.id} />
+              <span className="exercise-copy">
+                <strong>{p.title}</strong>
+                <span>{p.description}</span>
+                <small>
+                  {runtimeName(p.runtime)} <i>·</i> {p.durationMinutes} min
+                </small>
+              </span>
+              <ArrowRight className="exercise-open" size={18} />
+            </button>
+          ))}
+          {!filtered.length && (
+            <div className="catalog-empty">
+              <p>
+                {catalog.problems.length
+                  ? 'No exercises match those filters.'
+                  : 'No validated exercises yet.'}
+              </p>
+              {catalog.problems.length > 0 && (
+                <button
+                  className="link-button"
+                  onClick={() => {
+                    setQuery('');
+                    setRuntime('');
+                  }}
+                >
+                  Clear filters <X size={13} />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+      <aside className="recent-panel">
+        <div className="section-title">
+          <h2>
+            <History size={18} /> Recent attempts
+          </h2>
+        </div>
+        {attempts.length ? (
+          <div className="attempt-list">
+            {attempts.map((a) => (
+              <button key={a.id} className="attempt-entry" onClick={() => onOpen(a.id)}>
+                <span className={'attempt-state state-' + a.status}>{statusLabel(a.status)}</span>
+                <strong>
+                  {a.title}{' '}
+                  <span className="attempt-stack">
+                    {stackNames.get(a.problemId) || a.problemId}
+                  </span>
+                </strong>
+                <small>
+                  {dateLabel(a.createdAt)} · Seed {a.seed}
+                </small>
+                <ChevronRight size={15} />
               </button>
             ))}
-            {!filtered.length && (
-              <div className="catalog-empty">
-                <p>
-                  {catalog.problems.length
-                    ? 'No exercises match those filters.'
-                    : 'No validated exercises yet.'}
-                </p>
-                {catalog.problems.length > 0 && (
-                  <button
-                    className="link-button"
-                    onClick={() => {
-                      setQuery('');
-                      setRuntime('');
-                    }}
-                  >
-                    Clear filters <X size={13} />
-                  </button>
-                )}
-              </div>
-            )}
           </div>
-        </section>
-        <aside className="recent-panel">
-          <div className="section-title">
-            <h2>
-              <History size={18} /> Recent attempts
-            </h2>
-          </div>
-          {attempts.length ? (
-            <div className="attempt-list">
-              {attempts.map((a) => (
-                <button key={a.id} className="attempt-entry" onClick={() => onOpen(a.id)}>
-                  <span className={'attempt-state state-' + a.status}>{statusLabel(a.status)}</span>
-                  <strong>
-                    {a.title}{' '}
-                    <span className="attempt-stack">
-                      {stackNames.get(a.problemId) || a.problemId}
-                    </span>
-                  </strong>
-                  <small>
-                    {dateLabel(a.createdAt)} · Seed {a.seed}
-                  </small>
-                  <ChevronRight size={15} />
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="history-empty">
-              Open an exercise to start your first attempt. You can return here to resume it or
-              review your results.
-            </p>
-          )}
-          {catalog.attempts.length > 4 && (
-            <button
-              className="link-button history-toggle"
-              onClick={() => setAllAttempts(!allAttempts)}
-            >
-              {allAttempts
-                ? 'Show recent only'
-                : 'View all attempts (' + catalog.attempts.length + ')'}
-            </button>
-          )}
-        </aside>
-      </div>
+        ) : (
+          <p className="history-empty">
+            Open an exercise to start your first attempt. You can return here to resume it or review
+            your results.
+          </p>
+        )}
+        {catalog.attempts.length > 4 && (
+          <button
+            className="link-button history-toggle"
+            onClick={() => setAllAttempts(!allAttempts)}
+          >
+            {allAttempts
+              ? 'Show recent only'
+              : 'View all attempts (' + catalog.attempts.length + ')'}
+          </button>
+        )}
+      </aside>
     </main>
   );
 }
@@ -261,7 +267,7 @@ export function Dashboard({
     <main className="page dashboard">
       <header className="attempt-intro">
         <div className="metadata">
-          <Code2 size={16} />
+          <Code size={16} />
           {runtimeName(attempt.runtime)} <i>·</i>
           <Clock3 size={15} />
           {attempt.durationMinutes} min
@@ -296,7 +302,7 @@ export function Dashboard({
                   ? 'Your saved work is being graded.'
                   : 'Your timer starts when you select Begin. You can leave and return to this attempt from the library.'}
           </p>
-          <button
+          <Button
             className="primary launch-button"
             disabled={busy || (!ready && !active && !failed)}
             onClick={active ? onSolve : failed ? onRetry : onBegin}
@@ -311,14 +317,14 @@ export function Dashboard({
                     ? 'Submitting'
                     : 'Preparing workspace'}
             {ready || active ? <ArrowRight size={16} /> : !failed && <Spinner />}
-          </button>
+          </Button>
           <div className="launch-coach">
             <h3>
               <Sparkles size={17} /> AI coach
             </h3>
             <p>{providerSummary}</p>
             <button className="link-button" onClick={onSettings}>
-              Assistant settings <Settings2 size={13} />
+              Assistant settings <SlidersHorizontal size={13} />
             </button>
           </div>
           <small className="launch-seed">
@@ -367,10 +373,10 @@ export function Review({
             {runtimeName(attempt.runtime)} · Seed {attempt.seed} · {dateLabel(attempt.createdAt)}
           </p>
         </div>
-        <button className="secondary" onClick={onReplay} disabled={busy}>
+        <Button variant="outline" className="secondary" onClick={onReplay} disabled={busy}>
           <GitBranch size={16} />
           Replay this seed
-        </button>
+        </Button>
       </div>
       <div className="review-summary">
         <div className="row-icon">

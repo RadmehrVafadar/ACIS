@@ -1,22 +1,23 @@
+import { Button } from '@/components/ui/button';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
-  CheckCheck,
+  BadgeCheck,
   CircleAlert,
-  CircleHelp,
+  CircleQuestion,
   Database,
   Keyboard,
   LibraryBig,
-  LockKeyhole,
+  Lock,
   Moon,
   RotateCcw,
-  Settings2,
+  SlidersHorizontal,
   Signal,
   Sun,
   Unplug,
   X,
-} from 'lucide-react';
+} from '@keyline-icons/react/duotone';
 import {
   api,
   attemptPath,
@@ -250,14 +251,12 @@ export default function App() {
           <Mark />
           <span>ACIS</span>
         </button>
-        {currentAttempt && currentAttempt.status !== 'review' ? (
+        {currentAttempt && currentAttempt.status !== 'review' && (
           <Timer
             deadline={currentAttempt.deadline}
             duration={currentAttempt.durationMinutes}
             now={now}
           />
-        ) : (
-          <span className="brand-caption">AI interview studio</span>
         )}
         <div className="top-actions">
           <span
@@ -279,7 +278,7 @@ export default function App() {
               aria-expanded={help}
               onClick={() => setHelp(!help)}
             >
-              <CircleHelp />
+              <CircleQuestion />
             </IconButton>
             {help && (
               <div className="menu help-menu">
@@ -288,7 +287,7 @@ export default function App() {
                   Test instructions
                 </button>
                 <button onClick={() => show('settings')}>
-                  <Settings2 />
+                  <SlidersHorizontal />
                   Assistant settings
                 </button>
                 {active && (
@@ -314,23 +313,23 @@ export default function App() {
           </div>
           {active &&
             (inEditor ? (
-              <button
+              <Button
                 className="header-action"
                 aria-label="Save & Proceed"
                 disabled={busy}
                 onClick={() => void action('save').then((ok) => ok && navigate(route.id, true))}
               >
                 Save &amp; Proceed
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 className="header-action"
                 aria-label="Submit Test"
                 disabled={busy || lease !== 'held'}
                 onClick={() => show('submit')}
               >
                 Submit Test
-              </button>
+              </Button>
             ))}
         </div>
       </header>
@@ -382,17 +381,17 @@ export default function App() {
       ) : isLeasable && lease === 'blocked' ? (
         <main className="gate">
           <div className="row-icon">
-            <LockKeyhole />
+            <Lock />
           </div>
           <h1>This interview is open in another tab</h1>
           <p>
             Return to the active tab, or close it to continue here. Your interview timer keeps
             running.
           </p>
-          <button className="secondary" onClick={() => navigate(null)}>
+          <Button variant="outline" className="secondary" onClick={() => navigate(null)}>
             <ArrowLeft size={16} />
             Practice library
-          </button>
+          </Button>
         </main>
       ) : currentAttempt.status === 'review' ? (
         <Review
@@ -452,7 +451,7 @@ export default function App() {
               opens the project preview. Run Tests shows the actual assertions and output.
             </p>
             <h3>
-              <CheckCheck />
+              <BadgeCheck />
               Timing and submission
             </h3>
             <p>
@@ -462,9 +461,9 @@ export default function App() {
             </p>
           </div>
           <footer>
-            <button className="primary" onClick={() => setModal(null)}>
+            <Button className="primary" onClick={() => setModal(null)}>
               Got it
-            </button>
+            </Button>
           </footer>
         </Dialog>
       )}
@@ -489,10 +488,10 @@ export default function App() {
             </p>
           </div>
           <footer>
-            <button className="secondary" onClick={() => setModal(null)}>
+            <Button variant="outline" className="secondary" onClick={() => setModal(null)}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               className={modal === 'submit' ? 'primary' : 'danger-button'}
               disabled={busy}
               onClick={() => void confirmed()}
@@ -503,7 +502,7 @@ export default function App() {
                 : modal === 'reset'
                   ? 'Reset project'
                   : 'Reset live data'}
-            </button>
+            </Button>
           </footer>
         </Dialog>
       )}

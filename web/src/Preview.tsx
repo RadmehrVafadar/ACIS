@@ -1,5 +1,15 @@
+import { NativeSelect } from '@/components/ui/native-select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, ExternalLink, Globe, Monitor, RefreshCw } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  SquareArrowOutUpRight,
+  Globe,
+  Monitor,
+  RefreshCw,
+} from '@keyline-icons/react/duotone';
 import type { PreviewPort } from './model';
 import { IconButton, Spinner } from './ui';
 
@@ -124,7 +134,7 @@ function PortFrame({ port }: { port: PreviewPort }) {
         </IconButton>
         <label>
           <Globe size={13} />
-          <input
+          <Input
             aria-label="Preview URL"
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -138,12 +148,12 @@ function PortFrame({ port }: { port: PreviewPort }) {
           title="Open preview in a new tab"
           aria-label="Open preview in a new tab"
         >
-          <ExternalLink size={15} />
+          <SquareArrowOutUpRight size={15} />
         </a>
       </form>
       <div className="device-bar">
         <Monitor size={14} />
-        <select
+        <NativeSelect
           aria-label="Preview device"
           value={preset}
           onChange={(e) => {
@@ -157,10 +167,10 @@ function PortFrame({ port }: { port: PreviewPort }) {
           {Object.keys(presets).map((p) => (
             <option key={p}>{p}</option>
           ))}
-        </select>
+        </NativeSelect>
         {!fit && (
           <>
-            <input
+            <Input
               aria-label="Preview width"
               type="number"
               min={160}
@@ -172,7 +182,7 @@ function PortFrame({ port }: { port: PreviewPort }) {
               }}
             />
             <span>×</span>
-            <input
+            <Input
               aria-label="Preview height"
               type="number"
               min={160}
@@ -248,9 +258,9 @@ export function Preview({
               : 'Run the project to open its live preview.'}
         </p>
         {status !== 'starting' && (
-          <button className="secondary small" disabled={disabled} onClick={onRun}>
+          <Button variant="outline" className="secondary small" disabled={disabled} onClick={onRun}>
             Run project
-          </button>
+          </Button>
         )}
       </div>
     );

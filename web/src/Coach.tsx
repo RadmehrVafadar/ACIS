@@ -1,3 +1,7 @@
+import { NativeSelect } from '@/components/ui/native-select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { useEffect, useRef, useState } from 'react';
 import {
   ArrowUp,
@@ -8,10 +12,10 @@ import {
   History,
   MessageSquarePlus,
   Paperclip,
-  Settings2,
+  SlidersHorizontal,
   Sparkles,
   X,
-} from 'lucide-react';
+} from '@keyline-icons/react/duotone';
 import { api, attemptPath, errorMessage } from './model';
 import type { Attempt, CoachSettings, Provider } from './model';
 import { Dialog, IconButton, Spinner, TextMarkdown } from './ui';
@@ -34,7 +38,7 @@ export function Settings({
         <p className="lead">Choose the connection used for coaching in this workspace.</p>
         <div className="form-label">
           <label htmlFor="assistant-provider">Provider</label>
-          <select
+          <NativeSelect
             id="assistant-provider"
             value={settings.provider}
             onChange={(e) =>
@@ -47,11 +51,11 @@ export function Settings({
                 {p.available ? '' : ' · unavailable'}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <label className="form-label">
           Model override
-          <input
+          <Input
             value={settings.models[settings.provider] || ''}
             placeholder={provider?.model || 'Provider default'}
             maxLength={100}
@@ -77,9 +81,9 @@ export function Settings({
         </div>
       </div>
       <footer>
-        <button className="primary" onClick={onClose}>
+        <Button className="primary" onClick={onClose}>
           Done
-        </button>
+        </Button>
       </footer>
     </Dialog>
   );
@@ -250,7 +254,7 @@ export function Coach({
         {!provider?.available && (
           <button className="unavailable" onClick={onSettings}>
             <span className="status-dot off" />
-            Set up an assistant connection <Settings2 size={13} />
+            Set up an assistant connection <SlidersHorizontal size={13} />
           </button>
         )}
         <form
@@ -266,7 +270,7 @@ export function Coach({
               ? 'Context (' + (files.length + (includeTests ? 1 : 0)) + ')'
               : 'Add Context'}
           </button>
-          <textarea
+          <Textarea
             ref={composer}
             aria-label="Message the AI assistant"
             placeholder="Ask about your code…"
@@ -337,7 +341,7 @@ export function Coach({
             </label>
             <label className="form-label">
               Workspace files (up to four)
-              <input
+              <Input
                 placeholder="Filter by path"
                 value={fileSearch}
                 onChange={(e) => setFileSearch(e.target.value)}
@@ -365,9 +369,9 @@ export function Coach({
             </div>
           </div>
           <footer>
-            <button className="primary" onClick={() => setContext(false)}>
+            <Button className="primary" onClick={() => setContext(false)}>
               Done
-            </button>
+            </Button>
           </footer>
         </Dialog>
       )}

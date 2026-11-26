@@ -21,6 +21,9 @@ test('the default launcher opens the library and the learner can prepare a chose
   expect(launcher.trim()).toBe('ACIS is open at ' + address.origin);
   expect(await attempts()).toBe(before);
   await page.goto('/');
+  await expect(page.locator('.topbar')).not.toContainText('AI interview studio');
+  await expect(page.getByRole('searchbox')).toHaveAttribute('data-slot', 'input');
+  await expect(page.getByLabel('Filter by stack')).toHaveAttribute('data-slot', 'native-select');
   await expect(page.getByRole('heading', { name: 'Practice library' })).toBeVisible();
   const logo = page.getByRole('button', { name: 'Practice library' }).locator('img');
   await expect
@@ -28,8 +31,17 @@ test('the default launcher opens the library and the learner can prepare a chose
     .toBeGreaterThan(0);
   await expect(page.getByRole('button', { name: /Parcel Scan Replays/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Invoice Reconciliation/ })).toBeVisible();
+  const tiles = page.locator('.exercise-tile');
+  const lead = await tiles.first().boundingBox();
+  const second = await tiles.nth(1).boundingBox();
+  const third = await tiles.nth(2).boundingBox();
+  expect(lead!.width).toBeGreaterThan(1.8 * second!.width);
+  expect(Math.abs(second!.y - third!.y)).toBeLessThan(2);
   await page.screenshot({ path: info.outputPath('library-desktop.png'), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
+  expect((await tiles.nth(2).boundingBox())!.y).toBeGreaterThan(
+    (await tiles.nth(1).boundingBox())!.y,
+  );
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.screenshot({ path: info.outputPath('library-phone.png'), fullPage: true });
   await page.getByRole('button', { name: 'Switch to light theme' }).click();

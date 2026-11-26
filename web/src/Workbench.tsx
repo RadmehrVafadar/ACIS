@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
-  CheckCheck,
+  BadgeCheck,
   ChevronDown,
-  Code2,
-  Expand,
+  Code,
+  Maximize,
   FileText,
   GitBranch,
   ListChecks,
@@ -12,22 +12,21 @@ import {
   PanelRight,
   Play,
   RotateCw,
-  ScrollText,
-  Shrink,
+  Minimize,
   Square,
   Terminal,
   X,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react';
+  SearchPlus,
+  SearchMinus,
+} from '@keyline-icons/react/duotone';
 import type { Attempt, CoachSettings, Provider } from './model';
 import { gradeLabel } from './model';
 import { Coach } from './Coach';
 import { Preview } from './Preview';
 import { Dialog, IconButton, Spinner, TestResults, TextMarkdown } from './ui';
 type View = 'editor' | 'preview' | 'tests' | 'output';
-const viewItems: { id: View; name: string; icon: typeof Code2 }[] = [
-  { id: 'editor', name: 'Editor', icon: Code2 },
+const viewItems: { id: View; name: string; icon: typeof Code }[] = [
+  { id: 'editor', name: 'Editor', icon: Code },
   { id: 'preview', name: 'Preview', icon: Monitor },
   { id: 'tests', name: 'Tests', icon: ListChecks },
   { id: 'output', name: 'Output', icon: Terminal },
@@ -142,7 +141,7 @@ export function Workbench({
                       setRunMenu(false);
                     }}
                   >
-                    <ScrollText size={14} />
+                    <FileText size={14} />
                     Startup output
                   </button>
                 </div>
@@ -170,7 +169,7 @@ export function Workbench({
               label={max ? 'Restore panes' : 'Maximize center pane'}
               onClick={() => setMax(!max)}
             >
-              {max ? <Shrink /> : <Expand />}
+              {max ? <Minimize /> : <Maximize />}
             </IconButton>
           </div>
         </div>
@@ -212,7 +211,7 @@ export function Workbench({
                       >
                         <img loading="lazy" src={src} alt={imageLabels[i] || 'Task illustration'} />
                         <span>
-                          {imageLabels[i] || 'Task illustration'} <ZoomIn size={13} />
+                          {imageLabels[i] || 'Task illustration'} <SearchPlus size={13} />
                         </span>
                       </button>
                     ))}
@@ -304,7 +303,7 @@ export function Workbench({
             Workspace
           </span>
           <span>
-            <CheckCheck size={13} />
+            <BadgeCheck size={13} />
             Autosave
           </span>
           <span className="push">
@@ -317,11 +316,11 @@ export function Workbench({
         <Dialog wide title="Task illustration" onClose={() => setIllustration(null)}>
           <div className="image-controls">
             <IconButton label="Zoom out" onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}>
-              <ZoomOut />
+              <SearchMinus />
             </IconButton>
             <span>{Math.round(zoom * 100)}%</span>
             <IconButton label="Zoom in" onClick={() => setZoom((z) => Math.min(3, z + 0.25))}>
-              <ZoomIn />
+              <SearchPlus />
             </IconButton>
           </div>
           <div className="image-viewer">
