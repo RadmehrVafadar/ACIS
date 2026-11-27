@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
-  BadgeCheck,
   ChevronDown,
   FileText,
-  GitBranch,
   PanelRight,
   Play,
   RotateCw,
@@ -227,20 +225,6 @@ export default function Workbench({
             ),
           }}
         />
-        <footer className="desk-status">
-          <span>
-            <GitBranch size={12} />
-            Workspace
-          </span>
-          <span>
-            <BadgeCheck size={13} />
-            Autosave
-          </span>
-          <span className="push">
-            <FileText size={12} />
-            AI-assisted interview
-          </span>
-        </footer>
       </div>
       {illustration && (
         <Dialog wide title="Task illustration" onClose={() => setIllustration(null)}>

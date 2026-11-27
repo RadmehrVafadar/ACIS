@@ -486,6 +486,24 @@ test('a learner can resume a running attempt above the phone catalog', async ({
   await expect(page.getByRole('button', { name: 'Save & Proceed' })).toBeInViewport({ ratio: 1 });
 });
 
+test('the interview editor reaches the bottom of the viewport on desktop and phone', async ({
+  page,
+  context,
+}) => {
+  await routeWorkbench(context);
+  await page.goto(origin + '/?attempt=test-attempt');
+  await page.getByRole('button', { name: 'Begin', exact: true }).click();
+  const editor = page.getByTitle('Code editor', { exact: true });
+  await expect(editor).toBeVisible();
+
+  for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    const bottom = await editor.evaluate((frame) => frame.getBoundingClientRect().bottom);
+    expect(bottom).toBe(viewport.height);
+  }
+  await expect(page.getByText(/^(Workspace|Autosave|AI-assisted interview)$/)).toHaveCount(0);
+});
+
 test('polling preserves editor and chat focus; grading, contextual coaching and submission use the active tab', async ({
   page,
   context,
