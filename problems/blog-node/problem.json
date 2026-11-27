@@ -7,13 +7,13 @@
   "sharedBlog": true,
   "ports": [
     {
-      "port": 8080,
-      "label": "API",
+      "port": 8000,
+      "label": "Blog",
       "path": "/"
     },
     {
-      "port": 8000,
-      "label": "Blog",
+      "port": 8080,
+      "label": "API",
       "path": "/"
     }
   ],

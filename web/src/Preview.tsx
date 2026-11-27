@@ -225,18 +225,20 @@ function PortFrame({ port }: { port: PreviewPort }) {
 }
 export function Preview({
   ports,
+  selectedPort,
+  onSelectPort,
   status,
   onRun,
   disabled,
 }: {
   ports: PreviewPort[];
+  selectedPort: number | null;
+  onSelectPort: (port: number) => void;
   status: string;
   onRun: () => void;
   disabled: boolean;
 }) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const port =
-    ports.find((p) => p.port === selected) || ports.find((p) => p.port === 8080) || ports[0];
+  const port = ports.find((p) => p.port === selectedPort) ?? ports[0];
   if (status !== 'running' || !port)
     return (
       <div className="blank">
@@ -266,12 +268,13 @@ export function Preview({
     );
   return (
     <div className="preview">
-      <div className="port-tabs" aria-label="Preview ports">
+      <div className="port-tabs" role="group" aria-label="Preview ports">
         {ports.map((p) => (
           <button
             className={port.port === p.port ? 'selected' : ''}
+            aria-pressed={port.port === p.port}
             key={p.port}
-            onClick={() => setSelected(p.port)}
+            onClick={() => onSelectPort(p.port)}
           >
             {p.label} <code>{p.port}</code>
           </button>

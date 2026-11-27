@@ -64,6 +64,9 @@ Each extra variant gets a unique ID, a patch, a debrief, and a declared expected
 | `variants` | Variant IDs and expected failing test counts, in seed rotation order. |
 | `sharedBlog` | Copies the shared React blog into `frontend/` for the two publishing exercises. |
 
+Preview tabs follow the order of `ports`.
+List the learner-facing UI first so **Run** opens it by default.
+
 Use migrations and a repeatable seed command.
 PostgreSQL settings come from `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`.
 Mongo packs receive `MONGODB_URI` and `MONGODB_TEST_URI`.

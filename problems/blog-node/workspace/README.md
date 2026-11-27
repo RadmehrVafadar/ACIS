@@ -17,7 +17,7 @@ The saved ID must be retrievable from the database and `GET /api/posts/my-posts`
 
 ## Reproduce
 
-1. Run the project and open **Blog** on port 8000.
+1. Select **Run** to open **Blog** on port 8000.
 2. Sign in with `john@example.com` and `password123`.
 3. Select **Write**, fill in the required fields, and publish.
 4. Open **My Posts** and refresh to check persistence.

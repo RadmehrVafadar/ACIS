@@ -5,7 +5,7 @@ Repair the backend publishing workflow in this repository.
 
 ## Reproduce
 
-1. Choose **Run** and open the **Blog** preview on port 8000.
+1. Choose **Run** to open the **Blog** preview on port 8000.
 2. Sign in with `john@example.com` and `password123`.
 3. Open **Write**, enter a title and content, choose a category, and select **Publish Post**.
 4. Compare the result with **My Posts**, then run the two integration tests.

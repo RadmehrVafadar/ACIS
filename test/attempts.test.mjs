@@ -58,6 +58,22 @@ test('preparation is untimed; a single tab can start, reload, and hand off the e
   assert.equal(restored.status, 'active')
 })
 
+test('reopening a saved API-first blog attempt presents the frontend first', async (t) => {
+  const { store, a, runtime, options } = await fixture(t)
+  const api = { port: 8080, label: 'API', url: 'http://127.0.0.1:5101/' }
+  const blog = { port: 8000, label: 'Blog', url: 'http://127.0.0.1:5102/' }
+  await store.lease(a, 'first-tab')
+  store.begin(a)
+  a.appStatus = 'running'
+  a.runtime.previews = [api, blog]
+  store.persist(a)
+
+  const restored = new Attempts(runtime, options)
+  const attempt = restored.get(a.id)
+  await restored.lease(attempt, 'first-tab')
+  assert.deepEqual(restored.view(attempt, 'first-tab').previews, [blog, api])
+})
+
 test('editor lease takeover revokes its predecessor before returning the new credential', async (t) => {
   const allowRotation = Promise.withResolvers()
   let rotations = 0

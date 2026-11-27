@@ -53,8 +53,8 @@ In Django packs, **Run and Debug** can launch a debugging session on internal po
 
 **Run** starts or restarts the real application.
 Run, Run Tests, and Startup output select their tab in whichever pane holds it.
-The blog has an API preview on 8080 and its frontend on 8000.
-Select the frontend to sign in and exercise the application.
+The blog opens on the **Blog 8000** tab, where you can sign in and exercise the application.
+Select **API 8080** to inspect the backend.
 The preview offers navigation, reload, device presets, and custom dimensions.
 
 **Run Tests** saves the editor and grades a snapshot with the pack's declared test command.
