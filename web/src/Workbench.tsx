@@ -1,22 +1,15 @@
-import * as m from 'motion/react-m';
 import { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
   BadgeCheck,
   ChevronDown,
-  Code,
-  Maximize,
   FileText,
   GitBranch,
-  ListChecks,
-  Monitor,
   PanelRight,
   Play,
   RotateCw,
-  Minimize,
   Square,
   Terminal,
-  X,
   SearchPlus,
   SearchMinus,
 } from '@keyline-icons/react/duotone';
@@ -25,14 +18,10 @@ import { gradeLabel } from './model';
 import { Coach } from './Coach';
 import { Preview } from './Preview';
 import { Dialog, IconButton, Spinner, TestResults, TextMarkdown } from './ui';
-type View = 'editor' | 'preview' | 'tests' | 'output';
-const viewItems: { id: View; name: string; icon: typeof Code }[] = [
-  { id: 'editor', name: 'Editor', icon: Code },
-  { id: 'preview', name: 'Preview', icon: Monitor },
-  { id: 'tests', name: 'Tests', icon: ListChecks },
-  { id: 'output', name: 'Output', icon: Terminal },
-];
-export function Workbench({
+import { WorkbenchPanes } from './WorkbenchPanes';
+import { useWorkbenchLayout } from './workbench-layout';
+
+export default function Workbench({
   attempt,
   providers,
   settings,
@@ -49,11 +38,8 @@ export function Workbench({
   onSettings: () => void;
   refresh: () => void;
 }) {
-  const [question, setQuestion] = useState(() => innerWidth >= 730),
-    [assistant, setAssistant] = useState(() => innerWidth >= 800),
-    [view, setView] = useState<View>('editor'),
-    [runMenu, setRunMenu] = useState(false),
-    [max, setMax] = useState(false);
+  const workspace = useWorkbenchLayout();
+  const [runMenu, setRunMenu] = useState(false);
   const [illustration, setIllustration] = useState<string | null>(null),
     [zoom, setZoom] = useState(1);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -73,23 +59,13 @@ export function Workbench({
       window.removeEventListener('keydown', key);
     };
   }, [runMenu]);
-  function toggleQuestion() {
-    if (max) setMax(false);
-    setQuestion((v) => !v);
-    if (innerWidth < 730) setAssistant(false);
-  }
-  function toggleAssistant() {
-    if (max) setMax(false);
-    setAssistant((v) => !v);
-    if (innerWidth < 730) setQuestion(false);
-  }
   function run() {
     setRunMenu(false);
-    setView('preview');
+    workspace.reveal('preview');
     void action('run');
   }
   function tests() {
-    setView('tests');
+    workspace.reveal('tests');
     void action('test');
   }
   const grade = attempt.grade;
@@ -100,9 +76,10 @@ export function Workbench({
         <div className="desk-toolbar">
           <div className="tool-group">
             <IconButton
+              id="toggle-question"
               label="Toggle question"
-              aria-pressed={question && !max}
-              onClick={toggleQuestion}
+              aria-pressed={workspace.visible('question')}
+              onClick={() => workspace.toggle('question')}
             >
               <BookOpen />
             </IconButton>
@@ -138,7 +115,7 @@ export function Workbench({
                   </button>
                   <button
                     onClick={() => {
-                      setView('output');
+                      workspace.reveal('output');
                       setRunMenu(false);
                     }}
                   >
@@ -160,40 +137,20 @@ export function Workbench({
             )}
             <span className="divider" />
             <IconButton
+              id="toggle-assistant"
               label="Toggle assistant"
-              aria-pressed={assistant && !max}
-              onClick={toggleAssistant}
+              aria-pressed={workspace.visible('assistant')}
+              onClick={() => workspace.toggle('assistant')}
             >
               <PanelRight />
             </IconButton>
-            <IconButton
-              label={max ? 'Restore panes' : 'Maximize center pane'}
-              onClick={() => setMax(!max)}
-            >
-              {max ? <Minimize /> : <Maximize />}
-            </IconButton>
           </div>
         </div>
-        <div
-          className={
-            'panes ' +
-            (question && !max ? 'has-question ' : '') +
-            (assistant && !max ? 'has-coach' : '')
-          }
-        >
-          {question && !max && (
-            <aside className="question-pane">
-              <div className="pane-title">
-                <BookOpen size={14} />
-                <strong>Question</strong>
-                <IconButton
-                  label="Hide question"
-                  className="push"
-                  onClick={() => setQuestion(false)}
-                >
-                  <X />
-                </IconButton>
-              </div>
+        <WorkbenchPanes
+          workspace={workspace}
+          score={score + (grade?.stale ? '*' : '')}
+          content={{
+            question: (
               <div className="question-body">
                 <h1>{attempt.title}</h1>
                 <TextMarkdown
@@ -219,93 +176,57 @@ export function Workbench({
                   </div>
                 )}
               </div>
-            </aside>
-          )}
-          <section className="center-pane" aria-label="Coding workbench">
-            <m.div className="workspace-tabs" layoutScroll>
-              {viewItems.map(({ id, name, icon: Icon }) => (
-                <button
-                  key={id}
-                  aria-pressed={view === id}
-                  className={view === id ? 'selected' : ''}
-                  onClick={() => setView(id)}
-                >
-                  <Icon size={13} />
-                  {name}
-                  {id === 'tests' && score && (
-                    <small>
-                      {score}
-                      {grade?.stale ? '*' : ''}
-                    </small>
-                  )}
-                  {view === id && (
-                    <m.span
-                      aria-hidden="true"
-                      className="workspace-tab-indicator"
-                      layoutId="workspace-tab-indicator"
-                      transition={{ type: 'spring', visualDuration: 0.2, bounce: 0 }}
-                    />
-                  )}
-                </button>
-              ))}
-            </m.div>
-            <div className="views">
-              <section className="editor-view" hidden={view !== 'editor'}>
-                {attempt.editorUrl ? (
-                  <iframe
-                    allow="clipboard-read; clipboard-write; fullscreen"
-                    title="Code editor"
-                    src={attempt.editorUrl}
-                  />
-                ) : (
-                  <div className="blank">
-                    <Spinner />
-                    <p>Connecting to the code editor…</p>
+            ),
+            editor: attempt.editorUrl ? (
+              <iframe
+                allow="clipboard-read; clipboard-write; fullscreen"
+                title="Code editor"
+                src={attempt.editorUrl}
+              />
+            ) : (
+              <div className="blank">
+                <Spinner />
+                <p>Connecting to the code editor…</p>
+              </div>
+            ),
+            preview: (
+              <Preview
+                ports={attempt.previews}
+                status={attempt.appStatus}
+                disabled={busy}
+                onRun={run}
+              />
+            ),
+            tests: (
+              <>
+                <TestResults grade={grade} running={attempt.testStatus === 'running'} />
+                {attempt.testStatus === 'error' && (
+                  <div className="notice danger">
+                    {attempt.error || attempt.logs.at(-1) || 'The test runner failed to complete.'}
                   </div>
                 )}
-              </section>
-              <section className="preview-view" hidden={view !== 'preview'}>
-                <Preview
-                  ports={attempt.previews}
-                  status={attempt.appStatus}
-                  disabled={busy}
-                  onRun={run}
-                />
-              </section>
-              {view === 'tests' && (
-                <section className="results-view">
-                  <TestResults grade={grade} running={attempt.testStatus === 'running'} />
-                  {attempt.testStatus === 'error' && (
-                    <div className="notice danger">
-                      {attempt.error ||
-                        attempt.logs.at(-1) ||
-                        'The test runner failed to complete.'}
-                    </div>
-                  )}
-                </section>
-              )}
-              {view === 'output' && (
-                <section className="logs-view">
-                  <div className="pane-title">
-                    <Terminal size={14} />
-                    <strong>Workspace output</strong>
-                  </div>
-                  <pre>{attempt.logs.join('\n') || 'No output yet.'}</pre>
-                </section>
-              )}
-            </div>
-          </section>
-          <Coach
-            hidden={!assistant || max}
-            key={attempt.id}
-            attempt={attempt}
-            providers={providers}
-            settings={settings}
-            onSettings={onSettings}
-            refresh={refresh}
-            onHide={() => setAssistant(false)}
-          />
-        </div>
+              </>
+            ),
+            output: (
+              <>
+                <div className="pane-title">
+                  <Terminal size={14} />
+                  <strong>Workspace output</strong>
+                </div>
+                <pre>{attempt.logs.join('\n') || 'No output yet.'}</pre>
+              </>
+            ),
+            assistant: (
+              <Coach
+                attempt={attempt}
+                providers={providers}
+                settings={settings}
+                onSettings={onSettings}
+                refresh={refresh}
+              />
+            ),
+          }}
+        />
         <footer className="desk-status">
           <span>
             <GitBranch size={12} />
