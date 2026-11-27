@@ -2,12 +2,10 @@ import * as m from 'motion/react-m';
 import { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
-  BadgeCheck,
   ChevronDown,
   Code,
   Maximize,
   FileText,
-  GitBranch,
   ListChecks,
   Monitor,
   PanelRight,
@@ -306,20 +304,6 @@ export function Workbench({
             onHide={() => setAssistant(false)}
           />
         </div>
-        <footer className="desk-status">
-          <span>
-            <GitBranch size={12} />
-            Workspace
-          </span>
-          <span>
-            <BadgeCheck size={13} />
-            Autosave
-          </span>
-          <span className="push">
-            <FileText size={12} />
-            AI-assisted interview
-          </span>
-        </footer>
       </div>
       {illustration && (
         <Dialog wide title="Task illustration" onClose={() => setIllustration(null)}>
