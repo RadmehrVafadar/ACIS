@@ -32,8 +32,8 @@ async function routeWorkbench(context: BrowserContext, problems: Catalog['proble
     logs: [],
     editorUrl: origin + '/automation-editor',
     previews: [
-      { port: 8080, label: 'Backend', url: origin + '/automation-api' },
       { port: 8000, label: 'Frontend', url: origin + '/automation-preview' },
+      { port: 8080, label: 'Backend', url: origin + '/automation-api' },
     ],
     appStatus: 'stopped',
     testStatus: 'idle',
@@ -547,15 +547,18 @@ test('polling preserves editor and chat focus; grading, contextual coaching and 
   await expect(page.getByText('Source changed')).toBeVisible();
   await take(page, info, 'results-desktop');
   await page.getByRole('button', { name: 'Run', exact: true }).click();
-  await expect(page.locator('iframe[title="Application preview"]')).toHaveAttribute(
-    'src',
-    origin + '/automation-api',
-  );
-  await page.getByRole('button', { name: 'Frontend 8000' }).click();
-  await expect(page.locator('iframe[title="Application preview"]')).toHaveAttribute(
-    'src',
-    origin + '/automation-preview',
-  );
+  const preview = page.locator('iframe[title="Application preview"]');
+  await expect(preview).toHaveAttribute('src', origin + '/automation-preview');
+  const ports = page.getByRole('group', { name: 'Preview ports' });
+  await expect(ports.getByRole('button')).toHaveText([
+    'Frontend 8000',
+    'Backend 8080',
+  ]);
+  await expect(ports.getByRole('button', { pressed: true })).toHaveText('Frontend 8000');
+  await page.getByRole('button', { name: 'Backend 8080' }).click();
+  await expect(preview).toHaveAttribute('src', origin + '/automation-api');
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await expect(preview).toHaveAttribute('src', origin + '/automation-preview');
   await page.getByLabel('Preview device').selectOption('Mobile');
   await expect(page.getByLabel('Preview width')).toHaveValue('375');
   await expect(page.getByLabel('Preview height')).toHaveValue('812');

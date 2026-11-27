@@ -38,6 +38,7 @@ export default function Workbench({
 }) {
   const workspace = useWorkbenchLayout();
   const [runMenu, setRunMenu] = useState(false);
+  const [previewPort, setPreviewPort] = useState<number | null>(null);
   const [illustration, setIllustration] = useState<string | null>(null),
     [zoom, setZoom] = useState(1);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -59,6 +60,7 @@ export default function Workbench({
   }, [runMenu]);
   function run() {
     setRunMenu(false);
+    setPreviewPort(null);
     workspace.reveal('preview');
     void action('run');
   }
@@ -190,6 +192,8 @@ export default function Workbench({
             preview: (
               <Preview
                 ports={attempt.previews}
+                selectedPort={previewPort}
+                onSelectPort={setPreviewPort}
                 status={attempt.appStatus}
                 disabled={busy}
                 onRun={run}

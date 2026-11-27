@@ -23,6 +23,18 @@ const titleLog = (text) =>
     .filter(Boolean)
     .map((x) => x.slice(0, 3000))
 
+function previewTabs(attempt) {
+  const previews = attempt.runtime?.previews || []
+  // Saved publishing attempts retain the old API-first port list in their contract.
+  if (
+    (attempt.problemId === 'blog-django' || attempt.problemId === 'blog-node') &&
+    previews.length === 2 && previews[0].port === 8080 && previews[1].port === 8000
+  ) {
+    return [previews[1], previews[0]]
+  }
+  return previews
+}
+
 export class Attempts {
   constructor(runtime, options = {}) {
     this.runtime = runtime
@@ -267,7 +279,7 @@ export class Attempts {
       images,
       logs,
       editorUrl: own && status === 'active' ? a.runtime?.editorUrl : null,
-      previews: own && status === 'active' && appStatus === 'running' ? a.runtime?.previews || [] : [],
+      previews: own && status === 'active' && appStatus === 'running' ? previewTabs(a) : [],
       appStatus,
       testStatus,
       grade,
