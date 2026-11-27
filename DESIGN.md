@@ -23,7 +23,11 @@ Phones get a single column with a visible resume action above the catalog.
 Exercise arrows shift on hover or keyboard focus when motion is enabled.
 The exercise list briefly fades and slides into place when its visible results change.
 The exercise brief and its start or resume action share one screen.
-During an interview, the editor takes the center and the question and assistant panes can be hidden.
-The workbench underline follows the selected view, and menus and dialogs ease into place when opened.
+The interview opens with Question on the left, Editor in the center, and AI Assistant on the right.
+Each pane has its own tab strip, and tabs can move between panes.
+Use the studio accent for the selected underline, the insertion line when docking a tab, and the divider under the pointer or keyboard focus.
+Dividers follow the pointer directly.
+Below 720 pixels, show one full-width view with a switcher for all six tabs.
+The workbench underline follows the selected view within its pane, and menus and dialogs ease into place when opened.
 The system’s reduced-motion setting removes this movement.
-Use status text alongside color, keep a visible keyboard focus indicator, and let narrow screens stack content or open a side pane.
+Use status text alongside color and keep a visible keyboard focus indicator.

@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import type { BrowserContext, Page, TestInfo } from '@playwright/test';
+import type { BrowserContext, Locator, Page, TestInfo } from '@playwright/test';
 import type { Attempt, Catalog } from '../src/model';
 
 const origin = 'http://127.0.0.1:48171';
@@ -49,8 +49,8 @@ async function routeWorkbench(context: BrowserContext, problems: Catalog['proble
       { id: 'gemini', label: 'Gemini', model: '', available: false },
     ],
   };
-  let leaseOwner = '',
-    reads = 0,
+  const leaseOwners = new Map<string, string>();
+  let reads = 0,
     lastChat: Record<string, unknown> = {};
   await context.route(origin + '/**', async (route) => {
     const request = route.request(),
@@ -58,17 +58,18 @@ async function routeWorkbench(context: BrowserContext, problems: Catalog['proble
       path = url.pathname;
     const reply = (data: unknown, status = 200) => route.fulfill({ status, json: data });
     if (path === '/api/catalog') return reply(catalog);
-    if (path.startsWith('/api/attempts/test-attempt')) {
+    if (path.startsWith('/api/attempts/' + attempt.id)) {
       const action = path.split('/')[4];
       if (!action) {
         reads++;
         return reply(attempt);
       }
       const tab = request.headers()['x-acis-tab'];
+      const leaseOwner = leaseOwners.get(attempt.id);
       if (!tab) return reply({ error: 'Missing tab identity' }, 403);
       if (action === 'lease') {
         if (leaseOwner && leaseOwner !== tab) return reply({ error: 'Already open' }, 409);
-        leaseOwner = tab;
+        leaseOwners.set(attempt.id, tab);
         return reply({ ok: true });
       }
       if (leaseOwner !== tab) return reply({ error: 'Other tab holds lease' }, 409);
@@ -124,7 +125,7 @@ async function routeWorkbench(context: BrowserContext, problems: Catalog['proble
     if (path.startsWith('/automation-'))
       return route.fulfill({
         contentType: 'text/html',
-        body: '<!doctype html><html lang="en"><title>Browser test frame</title><body style="background:#191a1b;color:#bbb;font:14px system-ui"><main>Browser test frame</main></body></html>',
+        body: '<!doctype html><html lang="en"><title>Browser test frame</title><main><label>Working draft <input></label></main></html>',
       });
     const name = path.startsWith('/assets/')
       ? join('assets', basename(path))
@@ -150,6 +151,225 @@ async function take(page: Page, info: TestInfo, name: string) {
   await page.screenshot({ path });
   await info.attach(name, { path, contentType: 'image/png' });
 }
+
+async function dragBy(page: Page, handle: Locator, distance: number) {
+  const box = (await handle.boundingBox())!;
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + distance, y, { steps: 12 });
+  await page.mouse.up();
+}
+
+test('dock Preview beside AI Assistant and resize both panes without losing live work', async ({
+  page,
+  context,
+}) => {
+  const fixture = await routeWorkbench(context);
+  fixture.attempt.status = 'active';
+  fixture.attempt.appStatus = 'running';
+  await page.goto(origin + '/?attempt=test-attempt');
+  const editor = page.frameLocator('iframe[title="Code editor"]').getByLabel('Working draft');
+  const preview = page
+    .frameLocator('iframe[title="Application preview"]')
+    .getByLabel('Working draft');
+  const chat = page.getByLabel('Message the AI assistant');
+  await editor.fill('unsaved code');
+  await chat.fill('unsent question');
+  const center = page.getByRole('tablist', { name: 'Center pane' });
+  const right = page.getByRole('tablist', { name: 'Right pane' });
+  await center.getByRole('tab', { name: 'Preview' }).click({ timeout: 3000 });
+  await preview.fill('unsaved form');
+  await center
+    .getByRole('tab', { name: 'Preview' })
+    .dragTo(right.getByRole('tab', { name: 'AI Assistant' }));
+  await expect(right.getByRole('tab', { name: 'Preview', selected: true })).toBeVisible();
+  await expect(editor).toHaveValue('unsaved code');
+  await expect(preview).toHaveValue('unsaved form');
+
+  const questionPanel = page.getByRole('tabpanel', { name: 'Question' });
+  const previewPanel = page.getByRole('tabpanel', { name: 'Preview' });
+  const width = async (panel: Locator) => (await panel.boundingBox())!.width;
+  const questionWidth = await width(questionPanel);
+  const previewWidth = await width(previewPanel);
+  const splitters = page.getByRole('separator', { name: /Resize/ });
+  await dragBy(page, splitters.nth(0), 80);
+  expect(await width(questionPanel)).toBeCloseTo(questionWidth + 80, 0);
+  expect(await width(previewPanel)).toBeCloseTo(previewWidth, 0);
+  await dragBy(page, splitters.nth(1), -100);
+  expect(await width(previewPanel)).toBeCloseTo(previewWidth + 100, 0);
+  expect(await width(questionPanel)).toBeCloseTo(questionWidth + 80, 0);
+  await splitters.nth(1).press('ArrowLeft');
+  expect(await width(previewPanel)).toBeGreaterThan(previewWidth + 100);
+  await right.getByRole('tab', { name: 'AI Assistant' }).click();
+  await expect(chat).toHaveValue('unsent question');
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await expect(right.getByRole('tab', { name: 'Preview', selected: true })).toBeVisible();
+  await expect(preview).toHaveValue('unsaved form');
+  await expect(editor).toHaveValue('unsaved code');
+});
+
+test('pane menus reorder, restore empty panes, and remember layout across interviews', async ({
+  page,
+  context,
+}) => {
+  const fixture = await routeWorkbench(context);
+  fixture.attempt.status = 'active';
+  await page.goto(origin + '/?attempt=test-attempt');
+  const center = page.getByRole('tablist', { name: 'Center pane' });
+  const left = page.getByRole('tablist', { name: 'Left pane' });
+  const right = page.getByRole('tablist', { name: 'Right pane' });
+  const menu = (pane: string) =>
+    page.getByRole('button', { name: 'Move tab in ' + pane + ' pane' });
+  const item = (name: string) => page.getByRole('menuitem', { name, exact: true });
+  await menu('left').press('Enter');
+  await item('Move to right pane').press('Enter');
+  await expect(left).toBeHidden();
+  await expect(right.getByRole('tab', { name: 'Question' })).toBeFocused();
+  await menu('right').click();
+  await item('Move earlier').click();
+  await expect(right.getByRole('tab').first()).toHaveText('Question');
+  await menu('right').click();
+  await item('Maximize pane').click();
+  await expect(center).toBeHidden();
+  await menu('right').click();
+  await item('Restore panes').click();
+  await expect(center).toBeVisible();
+  await menu('center').click();
+  await item('Move to left pane').click();
+  await expect(left.getByRole('tab', { name: 'Editor' })).toBeFocused();
+  const separator = page.getByRole('separator', { name: /Resize/ }).first();
+  await separator.press('ArrowRight');
+  const savedWidth = (await left.boundingBox())!.width;
+  await page.reload();
+  await expect(left.getByRole('tab', { name: 'Editor', selected: true })).toBeVisible();
+  expect((await left.boundingBox())!.width).toBeCloseTo(savedWidth, 0);
+  fixture.attempt.id = 'second-attempt';
+  await page.goto(origin + '/?attempt=second-attempt');
+  await expect(left.getByRole('tab', { name: 'Editor', selected: true })).toBeVisible();
+  await expect(right.getByRole('tab').first()).toHaveText('Question');
+  await page.setViewportSize({ width: 390, height: 844 });
+  const switcher = page.getByRole('combobox', { name: 'Workspace view' });
+  await expect(switcher.getByRole('option')).toHaveCount(6);
+  await switcher.selectOption('assistant');
+  await expect(page.getByLabel('Message the AI assistant')).toBeVisible();
+  await expect(page.getByRole('tabpanel')).toHaveCount(1);
+  const desktopUnderlines = page.evaluate(
+    () =>
+      new Promise<number[]>((resolve) => {
+        const grid = document.querySelector('.panes')!;
+        const observer = new MutationObserver(() => {
+          const selected = grid.querySelectorAll('[role=tab][aria-selected=true]');
+          if (selected.length !== 3) return;
+          observer.disconnect();
+          const offsets = [0, 0, 0];
+          let frames = 0;
+          function sample() {
+            selected.forEach((tab, index) => {
+              const indicator = tab.querySelector('.workspace-tab-indicator')!;
+              const offset = Math.abs(
+                indicator.getBoundingClientRect().left - tab.getBoundingClientRect().left,
+              );
+              offsets[index] = Math.max(offsets[index], Math.round(offset));
+            });
+            if (++frames < 8) requestAnimationFrame(sample);
+            else resolve(offsets);
+          }
+          requestAnimationFrame(sample);
+        });
+        observer.observe(grid, { subtree: true, childList: true });
+      }),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  expect(await desktopUnderlines).toEqual([0, 0, 0]);
+  await expect(left.getByRole('tab', { name: 'Editor' })).toBeVisible();
+  expect((await left.boundingBox())!.width).toBeCloseTo(savedWidth, 0);
+  await menu('left').click();
+  await item('Reset layout').click();
+  await expect(left.getByRole('tab', { name: 'Question' })).toBeVisible();
+  await expect(center.getByRole('tab', { name: 'Editor', selected: true })).toBeVisible();
+  await expect(right.getByRole('tab')).toHaveCount(1);
+});
+
+test('empty panes accept drops and toolbar commands reveal relocated views', async ({
+  page,
+  context,
+}) => {
+  const fixture = await routeWorkbench(context);
+  fixture.attempt.status = 'active';
+  await page.goto(origin + '/?attempt=test-attempt');
+  const right = page.getByRole('tablist', { name: 'Right pane' });
+  const left = page.getByRole('tablist', { name: 'Left pane' });
+  const center = page.getByRole('tablist', { name: 'Center pane' });
+  await left
+    .getByRole('tab', { name: 'Question' })
+    .dragTo(right.getByRole('tab', { name: 'AI Assistant' }));
+  await expect(left).toBeHidden();
+
+  const source = (await center.getByRole('tab', { name: 'Output' }).boundingBox())!;
+  await page.mouse.move(source.x + 12, source.y + 12);
+  await page.mouse.down();
+  await page.mouse.move(source.x + 40, source.y + 12, { steps: 4 });
+  const empty = page.getByText('Left pane', { exact: true });
+  await expect(empty).toBeVisible();
+  await empty.hover();
+  await page.mouse.up();
+  await expect(left.getByRole('tab', { name: 'Output', selected: true })).toBeVisible();
+
+  await center
+    .getByRole('tab', { name: 'Tests' })
+    .dragTo(right.getByRole('tab', { name: 'AI Assistant' }));
+  await page.getByRole('button', { name: 'Toggle assistant' }).click();
+  await expect(page.getByLabel('Message the AI assistant')).toBeVisible();
+  await page.getByRole('button', { name: 'Move tab in right pane' }).click();
+  await page.getByRole('menuitem', { name: 'Maximize pane' }).click();
+  await page.getByRole('button', { name: 'Run options' }).click();
+  await page.getByRole('button', { name: 'Startup output' }).click();
+  await expect(left.getByRole('tab', { name: 'Output', selected: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Run Tests', exact: true }).click();
+  await expect(right.getByRole('tab', { name: /Tests/, selected: true })).toBeVisible();
+  await expect(page.getByText('Expected 201, got 500')).toBeVisible();
+  await page.getByRole('button', { name: 'Toggle question' }).click();
+  await expect(right.getByRole('tab', { name: 'Question', selected: true })).toBeVisible();
+});
+
+test('a damaged layout falls back to usable panes at the desktop breakpoint', async ({
+  page,
+  context,
+}) => {
+  const fixture = await routeWorkbench(context);
+  fixture.attempt.status = 'active';
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'acis-workbench-layout-v1',
+      JSON.stringify({
+        groups: {
+          left: ['editor'],
+          center: ['editor', 'preview', 'tests', 'output'],
+          right: ['assistant'],
+        },
+        widths: { left: 0.2, center: 0.55, right: 0.25 },
+      }),
+    ),
+  );
+  await page.setViewportSize({ width: 720, height: 800 });
+  await page.goto(origin + '/?attempt=test-attempt');
+  const editor = page.getByRole('tab', { name: 'Editor' });
+  await expect(editor).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tablist')).toHaveCount(3);
+  await editor.press('End');
+  await expect(page.getByRole('tab', { name: 'Output' })).toBeFocused();
+  const splitter = page.getByRole('separator', { name: 'Resize left and center panes' });
+  await splitter.press('End');
+  expect((await page.getByRole('tabpanel', { name: 'Output' }).boundingBox())!.width).toBeCloseTo(
+    200,
+    0,
+  );
+  await page.setViewportSize({ width: 719, height: 800 });
+  await expect(page.getByRole('tabpanel')).toHaveCount(1);
+  await expect(page.getByLabel('Workspace view')).toHaveValue('output');
+});
 
 test('the catalog animates a filter change that keeps the same featured exercise', async ({
   page,

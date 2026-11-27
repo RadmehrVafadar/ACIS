@@ -14,7 +14,6 @@ import {
   Paperclip,
   SlidersHorizontal,
   MessageSquare,
-  X,
 } from '@keyline-icons/react/duotone';
 import { api, attemptPath, errorMessage } from './model';
 import type { Attempt, CoachSettings, Provider } from './model';
@@ -94,16 +93,12 @@ export function Coach({
   settings,
   onSettings,
   refresh,
-  onHide,
-  hidden,
 }: {
   attempt: Attempt;
   providers: Provider[];
   settings: CoachSettings;
   onSettings: () => void;
   refresh: () => void;
-  onHide: () => void;
-  hidden: boolean;
 }) {
   const [id, setId] = useState<string | null>(() => attempt.chats.at(-1)?.id ?? null);
   const [history, setHistory] = useState(false),
@@ -179,33 +174,7 @@ export function Coach({
     }
   }
   return (
-    <aside className="coach-pane" aria-label="AI assistant" hidden={hidden}>
-      <div className="pane-title">
-        <MessageSquare size={15} />
-        <strong>AI Assistant</strong>
-        <div className="push tool-group">
-          <IconButton
-            label="New chat"
-            disabled={busy}
-            onClick={() => {
-              setId(null);
-              setLastAnswer(null);
-              setDraft('');
-              setFiles([]);
-              setIncludeTests(false);
-              setError('');
-            }}
-          >
-            <MessageSquarePlus />
-          </IconButton>
-          <IconButton label="Chat history" onClick={() => setHistory(true)}>
-            <History />
-          </IconButton>
-          <IconButton label="Hide assistant" onClick={onHide}>
-            <X />
-          </IconButton>
-        </div>
-      </div>
+    <>
       <div className="conversation" ref={scroll}>
         {messages.length === 0 ? (
           <div className="coach-intro">
@@ -289,6 +258,25 @@ export function Coach({
             <button className="provider-button" type="button" onClick={onSettings}>
               {provider?.label || 'Provider'} <ChevronDown size={12} />
             </button>
+            <div className="chat-tools">
+              <IconButton
+                label="New chat"
+                disabled={busy}
+                onClick={() => {
+                  setId(null);
+                  setLastAnswer(null);
+                  setDraft('');
+                  setFiles([]);
+                  setIncludeTests(false);
+                  setError('');
+                }}
+              >
+                <MessageSquarePlus />
+              </IconButton>
+              <IconButton label="Chat history" onClick={() => setHistory(true)}>
+                <History />
+              </IconButton>
+            </div>
             <button
               className="send"
               type="submit"
@@ -375,6 +363,6 @@ export function Coach({
           </footer>
         </Dialog>
       )}
-    </aside>
+    </>
   );
 }
