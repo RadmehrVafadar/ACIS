@@ -95,6 +95,44 @@ test('a Django learner reproduces the failure, repairs actual files in the IDE, 
   const title = 'Notes from a Django interview'
   await blog.getByLabel(/^Title/).fill(title)
   await blog.getByLabel(/^Content/).fill('A post that must be present after a fresh database read.')
+  const rightTabs = page.getByRole('tablist', { name: 'Right pane' })
+  const assistant = rightTabs.getByRole('tab', { name: 'AI Assistant' })
+  const settledAssistantTab = () => expect.poll(() => assistant.evaluate(tab => {
+    const indicator = tab.querySelector('.workspace-tab-indicator')
+    if (!indicator) return false
+    const underline = indicator.getBoundingClientRect()
+    const button = tab.getBoundingClientRect()
+    return Math.abs(underline.left - button.left) < 1 && Math.abs(underline.right - button.right) < 2
+  })).toBe(true)
+  const chat = page.getByRole('textbox', { name: 'Message the AI assistant' })
+  await chat.fill('What should I inspect in the publish request?')
+  await page.getByRole('tab', { name: 'Preview', exact: true }).dragTo(assistant)
+  await expect(rightTabs.getByRole('tab', { name: 'Preview', selected: true })).toBeVisible()
+  await renderedReadme(page)
+  const divider = page.getByRole('separator', { name: 'Resize center and right panes' })
+  for (let step = 0; step < 5; step++) await divider.press('ArrowLeft')
+  await assistant.click()
+  await expect(chat).toHaveValue('What should I inspect in the publish request?')
+  await page.mouse.move(1, 1)
+  await settledAssistantTab()
+  await page.screenshot({ path: info.outputPath('workbench-docked.png') })
+  for (const theme of ['light', 'dark']) {
+    await page.getByRole('button', { name: 'Switch to ' + theme + ' theme' }).click()
+    for (const motion of ['reduce', 'no-preference'] as const) {
+      await page.emulateMedia({ reducedMotion: motion })
+      for (const width of [390, 1440]) {
+        await page.setViewportSize({ width, height: width === 390 ? 844 : 900 })
+        if (width === 390) await page.getByLabel('Workspace view').selectOption('assistant')
+        await expect(chat).toBeVisible()
+        if (width === 1440) await settledAssistantTab()
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+        await page.screenshot({ path: info.outputPath(`docked-${width}-${theme}-${motion}.png`) })
+      }
+    }
+  }
+  await rightTabs.getByRole('tab', { name: 'Preview' }).click()
+  await expect(blog.getByLabel(/^Title/)).toHaveValue(title)
+  await expect(blog.getByLabel(/^Content/)).toHaveValue('A post that must be present after a fresh database read.')
   await blog.getByRole('button', { name: 'Publish Post' }).click()
   await expect(blog.getByText('Failed to create post', { exact: true })).toBeVisible()
   await expect(blog.locator('input[name=title]')).toHaveValue(title)
@@ -103,7 +141,7 @@ test('a Django learner reproduces the failure, repairs actual files in the IDE, 
   const learnerWorkspace = path.resolve('.acis', 'browser-test', process.env.ACIS_E2E_RUN!, 'attempts', id, 'workspace')
   writeFileSync(path.join(learnerWorkspace, 'backend/blog/tests/test_learner_notes.py'),
     'def test_my_unfinished_idea():\n    assert False\n')
-  await page.getByRole('button', { name: 'Editor', exact: true }).click()
+  await page.getByRole('tab', { name: 'Editor', exact: true }).click()
   await repairInEditor(page, 'backend/blog/views.py')
   await repairInEditor(page, 'backend/blog/serializers.py')
   await page.getByRole('button', { name: 'Run Tests', exact: true }).click()
@@ -118,7 +156,7 @@ test('a Django learner reproduces the failure, repairs actual files in the IDE, 
     .toBe(2)
   await expect(page.locator('details.test-case.failed')).toHaveCount(0)
   expect((await (await request.get('/api/attempts/' + id)).json()).grade.cases).toHaveLength(2)
-  await page.getByRole('button', { name: 'Preview', exact: true }).click()
+  await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await blog.getByRole('button', { name: 'Publish Post' }).click()
   await expect(blog.getByRole('heading', { name: title })).toBeVisible()
   await page.getByRole('button', { name: 'Reload preview' }).click()

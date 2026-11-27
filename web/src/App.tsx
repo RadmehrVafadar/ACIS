@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -30,9 +30,9 @@ import {
 import type { Attempt, Catalog, CoachSettings, Route } from './model';
 import { Dashboard, Library, Review } from './Overview';
 import { Settings } from './Coach';
-import { Workbench } from './Workbench';
 import { Dialog, IconButton, Mark, Spinner, Timer } from './ui';
 
+const Workbench = lazy(() => import('./Workbench'));
 type Modal = 'settings' | 'instructions' | 'reset' | 'reset-data' | 'submit' | null;
 const studioName = 'AI Coding Interview Studio';
 const empty: Catalog = { problems: [], attempts: [], providers: [] };
@@ -406,16 +406,24 @@ export default function App() {
           onLibrary={() => navigate(null)}
         />
       ) : inEditor ? (
-        <Workbench
-          key={currentAttempt.id}
-          attempt={currentAttempt}
-          providers={catalog.providers}
-          settings={settings}
-          action={action}
-          busy={busy}
-          onSettings={() => show('settings')}
-          refresh={refresh}
-        />
+        <Suspense
+          fallback={
+            <main className="blank" aria-label="Opening the interview">
+              <Spinner />
+            </main>
+          }
+        >
+          <Workbench
+            key={currentAttempt.id}
+            attempt={currentAttempt}
+            providers={catalog.providers}
+            settings={settings}
+            action={action}
+            busy={busy}
+            onSettings={() => show('settings')}
+            refresh={refresh}
+          />
+        </Suspense>
       ) : (
         <Dashboard
           attempt={currentAttempt}

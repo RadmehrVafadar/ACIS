@@ -32,13 +32,27 @@ Taking over disconnects the previous editor and retains the files and running ap
 
 The workbench opens the question, README preview, and coach.
 
-![Interview workspace with the exercise brief, editor, and assistant](images/workbench.png)
+![Interview with Question on the left, the live editor in the center, and AI Assistant and Preview sharing the right pane](images/workbench.png)
+
+Drag **Preview** onto the **AI Assistant** tab to keep the editor visible while switching between the app and chat.
+All six tabs can move between the three panes or change order within a pane.
+Drop onto the highlighted insertion line to place a tab precisely.
+An empty pane collapses and reappears as a drop target when you drag.
+The **Move tab** button at the end of each tab strip offers the same destinations and ordering controls by keyboard or touch.
+
+Drag a divider to resize its two neighboring panes, or focus it and use the Left and Right arrow keys.
+The pane menu also lets you maximize a pane, restore it, or **Reset layout**.
+ACIS remembers tab positions and pane widths across interviews in this browser.
+Each interview opens with Editor selected in its saved pane.
+Below 720 pixels wide, use the **Workspace view** switcher to open any of the six views.
+Widening the window restores the desktop arrangement.
 
 Use the editor's Explorer, search, Source Control, splits, and Terminal as you would in VS Code.
 Open the command palette with Ctrl+Shift+P and use Quick Open with Ctrl+P.
 In Django packs, **Run and Debug** can launch a debugging session on internal port 8082.
 
 **Run** starts or restarts the real application.
+Run, Run Tests, and Startup output select their tab in whichever pane holds it.
 The blog has an API preview on 8080 and its frontend on 8000.
 Select the frontend to sign in and exercise the application.
 The preview offers navigation, reload, device presets, and custom dimensions.
