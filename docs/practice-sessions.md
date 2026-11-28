@@ -72,7 +72,7 @@ Protected files are read-only in the editor and their contents are checked durin
 ## Submission and storage
 
 **Save & Proceed** opens the dashboard and lets you resume while time remains.
-To end an attempt without grading, choose **Stop attempt** on the dashboard or **Stop** beside its entry in **Recent attempts**, then confirm.
+To end an attempt without grading, choose **Stop attempt** on the dashboard or **Stop** beside its title in **Recent attempts**, then confirm.
 A stopped attempt releases its Docker workspace and keeps your saved changes and conversations available from the library.
 **Submit Test** or expiry freezes the workspace, grades that snapshot, and opens review.
 If the deadline passes while Docker is offline, ACIS retains the saved files and can finish grading after Docker returns.

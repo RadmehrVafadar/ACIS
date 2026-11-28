@@ -15,6 +15,7 @@ Add shared interactive components from shadcn/ui to `web/src/components/ui` and 
 The studio bundles Bricolage Grotesque locally, using heavier weights for headings and exercise titles and regular weight for reading.
 The desktop library places its two-line masthead and recent attempts in a left column beside the exercise collection.
 Each history entry leads with the exercise name and places the stack on the left and status on the right of the second line.
+In unfinished entries, align the quiet **Stop** action with the title at the right edge.
 The creation time and replay seed are available in the entry tooltip.
 The first matching exercise spans the collection with its full paper color.
 The remaining exercises sit in pairs on neutral surfaces, with a compact paper cover to the left of each brief.

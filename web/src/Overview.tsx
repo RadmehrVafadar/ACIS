@@ -226,9 +226,9 @@ export function Library({
                 </button>
                 {canStopAttempt(a) && (
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="secondary small"
+                    variant="ghost"
+                    size="xs"
+                    className="attempt-stop"
                     aria-label={'Stop attempt for ' + a.title}
                     disabled={creating}
                     onClick={() => onStop(a)}
