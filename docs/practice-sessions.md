@@ -21,6 +21,7 @@ Choosing an exercise creates a new attempt and cycles through that pack's varian
 To request a particular starter, pass `--problem` and `--seed` to the launcher.
 Select **Resume** to reopen the most recent active interview, or choose a specific session from **Recent attempts**.
 The same seed in the same pack version recreates the same starting code with fresh application data.
+The dashboard shows the seed alongside the stack and duration.
 Opening or preparing an attempt leaves the timer at its full allocation.
 
 ## During the interview
@@ -30,7 +31,8 @@ Closing a tab, restarting the launcher, and resetting the project keep that dead
 Another tab can take over after the previous editing lease expires.
 Taking over disconnects the previous editor and retains the files and running application.
 
-The workbench opens the question, README preview, and coach.
+The workbench opens the question, README preview, and AI Assistant.
+Type a question into **ChatBot** for help with the exercise.
 
 ![Interview with Question on the left, the live editor in the center, and AI Assistant and Preview sharing the right pane](images/workbench.png)
 
@@ -70,6 +72,8 @@ Protected files are read-only in the editor and their contents are checked durin
 ## Submission and storage
 
 **Save & Proceed** opens the dashboard and lets you resume while time remains.
+To end an attempt without grading, choose **Stop attempt** on the dashboard or **Stop** beside its entry in **Recent attempts**, then confirm.
+A stopped attempt releases its Docker workspace and keeps your saved changes and conversations available from the library.
 **Submit Test** or expiry freezes the workspace, grades that snapshot, and opens review.
 If the deadline passes while Docker is offline, ACIS retains the saved files and can finish grading after Docker returns.
 If the launcher is force-killed while Docker keeps running, ACIS captures the saved files when the launcher restarts.

@@ -1,4 +1,4 @@
-export type Status = 'preparing' | 'ready' | 'active' | 'finalizing' | 'review' | 'error';
+export type Status = 'preparing' | 'ready' | 'active' | 'finalizing' | 'review' | 'stopping' | 'stopped' | 'error';
 export type ProviderId = 'codex' | 'openai' | 'gemini';
 export interface Problem {
   id: string;
@@ -21,6 +21,7 @@ export interface PastAttempt {
   seed: string | number;
   deadline: number | null;
   createdAt: string | number;
+  completionReason?: string;
 }
 export interface Chat {
   id: string;
@@ -60,9 +61,8 @@ export interface Attempt extends PastAttempt {
   testStatus: 'idle' | 'running' | 'done' | 'error';
   grade: Grade | null;
   error?: string;
-  completionReason?: string;
   elapsedSeconds?: number;
-  review?: { diff: string; debrief: string };
+  review?: { diff: string; debrief?: string };
   chats: Chat[];
 }
 export interface Catalog {
@@ -192,8 +192,13 @@ export function statusLabel(status: Status) {
     active: 'In progress',
     finalizing: 'Submitting',
     review: 'Completed',
+    stopping: 'Stopping',
+    stopped: 'Stopped',
     error: 'Needs attention',
   }[status];
+}
+export function canStopAttempt(attempt: PastAttempt) {
+  return !attempt.completionReason && ['preparing', 'ready', 'active', 'error'].includes(attempt.status);
 }
 export function dateLabel(value: string | number) {
   const date = new Date(value);

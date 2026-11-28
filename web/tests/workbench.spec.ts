@@ -474,6 +474,7 @@ test('a learner can resume a running attempt above the phone catalog', async ({
   await page.goto(origin);
   const resume = page.getByRole('button', { name: 'Resume', exact: true });
   await expect(resume).toBeInViewport();
+  await expect(page.getByRole('button', { name: 'Stop attempt', exact: true })).toBeInViewport();
   const history = page.getByRole('complementary', { name: 'Recent attempts' });
   const entry = history.getByRole('button', { name: 'Post Creation Django In progress', exact: true });
   await expect(entry).toBeVisible();
@@ -486,7 +487,7 @@ test('a learner can resume a running attempt above the phone catalog', async ({
   await expect(page.getByRole('button', { name: 'Save & Proceed' })).toBeInViewport({ ratio: 1 });
 });
 
-test('the interview editor reaches the bottom of the viewport on desktop and phone', async ({
+test('the interview editor uses the full height and omits the header indicators on desktop and phone', async ({
   page,
   context,
 }) => {
@@ -496,8 +497,10 @@ test('the interview editor reaches the bottom of the viewport on desktop and pho
   const editor = page.getByTitle('Code editor', { exact: true });
   await expect(editor).toBeVisible();
 
-  for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+  for (const viewport of [{ width: 1045, height: 799 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
+    await expect(page.getByTitle('Remaining interview time')).toHaveCount(0);
+    await expect(page.getByRole('img', { name: 'Connected', exact: true })).toHaveCount(0);
     const bottom = await editor.evaluate((frame) => frame.getBoundingClientRect().bottom);
     expect(bottom).toBe(viewport.height);
   }
@@ -575,6 +578,54 @@ test('polling preserves editor and chat focus; grading, contextual coaching and 
   await page.getByRole('button', { name: 'Submit Test' }).click();
   await page.getByRole('button', { name: 'Confirm submission' }).click();
   await expect(page.getByRole('heading', { name: 'Instructor debrief' })).toBeVisible();
+});
+
+test('the expired review centers the shield in its tile', async ({ page, context }, info) => {
+  const { attempt } = await routeWorkbench(context);
+  attempt.status = 'review';
+  attempt.completionReason = 'expired';
+  attempt.elapsedSeconds = 3600;
+  await page.goto(origin + '/?attempt=test-attempt');
+  const tile = page.locator('.review-summary .row-icon');
+  for (const width of [624, 320, 1440]) {
+    await page.setViewportSize({ width, height: 706 });
+    const box = (await tile.boundingBox())!;
+    const icon = (await tile.locator('svg').boundingBox())!;
+    expect(icon.x + icon.width / 2).toBeCloseTo(box.x + box.width / 2, 1);
+    expect(icon.y + icon.height / 2).toBeCloseTo(box.y + box.height / 2, 1);
+    if (width === 624) await tile.locator('..').screenshot({ path: info.outputPath('review-banner.png') });
+  }
+});
+
+test('the dashboard groups the seed with the stack and duration and offers compact assistant settings', async ({ page, context }) => {
+  const { attempt } = await routeWorkbench(context);
+  attempt.status = 'active';
+  await page.goto(origin + '/?attempt=test-attempt#dashboard');
+  const metadata = page.locator('.attempt-intro .metadata > span');
+  for (const width of [966, 320]) {
+    await page.setViewportSize({ width, height: 799 });
+    await expect(metadata).toHaveText(['Django', '60 min', 'Seed 42']);
+    const duration = (await metadata.nth(1).boundingBox())!;
+    const seed = (await metadata.nth(2).boundingBox())!;
+    expect(seed.x).toBeGreaterThan(duration.x + duration.width);
+    expect(seed.y).toBeCloseTo(duration.y, 0);
+  }
+  const panel = page.locator('.launch-panel');
+  await expect(panel.getByText(/configured|Replay seed|AI coach/)).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Assistant settings' }).click();
+  await expect(page.getByRole('dialog', { name: 'Assistant settings' })).toBeVisible();
+});
+
+test('a new chat invites a question without suggesting prompts', async ({ page, context }) => {
+  const { attempt } = await routeWorkbench(context);
+  attempt.status = 'active';
+  await page.goto(origin + '/?attempt=test-attempt');
+  const intro = page.locator('.coach-intro');
+  await expect(intro).toBeVisible();
+  expect(await intro.getByRole('heading').innerText()).toBe('ChatBot');
+  await expect(intro.getByText('Ask AI about this problem.')).toBeVisible();
+  await expect(intro.getByRole('button')).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'Message the AI assistant' })).toBeEditable();
 });
 
 test('protected-file grading reports zero credit in the submitted review', async ({

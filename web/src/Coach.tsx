@@ -115,7 +115,6 @@ export function Coach({
       null,
     );
   const scroll = useRef<HTMLDivElement>(null);
-  const composer = useRef<HTMLTextAreaElement>(null);
   const current = attempt.chats.find((c) => c.id === id);
   const provider = providers.find((p) => p.id === settings.provider);
   const messages = [...(current?.messages || [])];
@@ -181,23 +180,8 @@ export function Coach({
             <div className="coach-star">
               <MessageSquare size={26} />
             </div>
-            <h2>Where are you stuck?</h2>
-            <p>Talk through the evidence with your coach while you work on a fix.</p>
-            {!draft &&
-              ['Help me reproduce the issue', 'Help me interpret a failing test'].map(
-                (question) => (
-                  <button
-                    key={question}
-                    className="coach-prompt"
-                    onClick={() => {
-                      setDraft(question);
-                      composer.current?.focus();
-                    }}
-                  >
-                    {question} <ArrowUp size={13} />
-                  </button>
-                ),
-              )}
+            <h2>ChatBot</h2>
+            <p>Ask AI about this problem.</p>
           </div>
         ) : (
           messages.map((msg, i) => (
@@ -240,7 +224,6 @@ export function Coach({
               : 'Add Context'}
           </button>
           <Textarea
-            ref={composer}
             aria-label="Message the AI assistant"
             placeholder="Ask about your code…"
             value={draft}

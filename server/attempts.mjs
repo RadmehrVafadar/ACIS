@@ -91,7 +91,7 @@ export class Attempts {
   list() {
     return Array.from(this.items.values())
       .sort((a, b) => b.createdAt - a.createdAt)
-      .map(({ id, problemId, title, status, seed, deadline, createdAt }) => ({
+      .map(({ id, problemId, title, status, seed, deadline, createdAt, completionReason }) => ({
         id,
         problemId,
         title,
@@ -99,9 +99,10 @@ export class Attempts {
         seed,
         deadline,
         createdAt,
+        completionReason,
       }))
   }
-  lease(a, tab) {
+  lease(a, tab, { editor = true } = {}) {
     if (typeof tab !== 'string' || !/^[a-zA-Z0-9_-]{8,100}$/.test(tab))
       throw fault('Open this session in the practice browser.', 400)
     const previous = this.leases.get(a.id)
@@ -110,7 +111,7 @@ export class Attempts {
     if (previous?.pending) return previous.pending
     const lease = { tab, expires: this.now() + 15000 }
     this.leases.set(a.id, lease)
-    if (!a.runtime?.editorUrl || !['ready', 'active'].includes(a.status) || a.editorTab === tab) return
+    if (!editor || !a.runtime?.editorUrl || !['ready', 'active'].includes(a.status) || a.editorTab === tab) return
     if (!a.editorTab && !a.deadline) {
       a.editorTab = tab
       this.persist(a)
@@ -286,7 +287,7 @@ export class Attempts {
       chats,
       completionReason,
       elapsedSeconds: a.elapsedSeconds,
-      review: status === 'review' ? a.review : undefined,
+      review: status === 'review' || status === 'stopped' ? a.review : undefined,
     }
   }
 
@@ -404,14 +405,17 @@ export class Attempts {
   }
 
   finish(a, reason) {
+    const stopping = reason === 'stopped'
+    if (a.completionReason && stopping !== (a.completionReason === 'stopped'))
+      throw fault('This attempt has already ended.', 409)
     if (this.finalizers.has(a.id)) return this.finalizers.get(a.id)
-    if (a.status === 'review') return Promise.resolve()
-    if (!a.deadline) throw fault('Begin the interview before submitting.', 409)
-    a.elapsedSeconds ??= Math.max(
-      0,
-      a.durationMinutes * 60 - Math.floor(Math.max(0, a.deadline - this.now()) / 1000),
-    )
-    a.status = 'finalizing'
+    if (a.status === 'review' || a.status === 'stopped') return Promise.resolve()
+    if (!a.deadline && !stopping) throw fault('Begin the interview before submitting.', 409)
+    a.elapsedSeconds ??= a.deadline
+      ? Math.max(0, a.durationMinutes * 60 - Math.floor(Math.max(0, a.deadline - this.now()) / 1000))
+      : 0
+    if (stopping) a.deadline = null
+    a.status = stopping ? 'stopping' : 'finalizing'
     a.completionReason ||= reason
     a.error = null
     this.persist(a)
@@ -426,7 +430,11 @@ export class Attempts {
         this.persist(a)
       }
       await Promise.all([this.stopTests(a), this.tasks.get(a.id)])
-      if (!a.review) {
+      if (stopping && !a.review) {
+        a.grade = null
+        a.testStatus = 'idle'
+        a.review = { diff: changes(a.starter, a.finalSnapshot) }
+      } else if (!a.review) {
         await this.runtime.pauseEditor(a, { save: false })
         const pack = this.contract(a)
         // Test commands may write files. Keep the submitted source intact for review and retries.
@@ -439,12 +447,12 @@ export class Attempts {
         }
         a.review = { diff: changes(a.starter, a.finalSnapshot), debrief: pack.debrief }
         a.testStatus = 'done'
-        a.appStatus = 'stopped'
-        a.finishedAt = this.now()
-        this.persist(a)
       }
+      a.appStatus = 'stopped'
+      a.finishedAt ??= this.now()
+      this.persist(a)
       await this.runtime.dispose(a)
-      a.status = 'review'
+      a.status = stopping ? 'stopped' : 'review'
     })()
       .catch((error) => {
         a.error = error.message
@@ -462,12 +470,12 @@ export class Attempts {
   tick() {
     for (const a of this.items.values()) {
       if (
-        a.status === 'finalizing' ||
+        a.status === 'finalizing' || a.status === 'stopping' ||
         (['active', 'preparing', 'error'].includes(a.status) &&
           !a.completionReason &&
           elapsed(a, this.now()))
       )
-        this.finish(a, 'expired')
+        this.finish(a, a.completionReason || 'expired')
     }
   }
   retry(a) {

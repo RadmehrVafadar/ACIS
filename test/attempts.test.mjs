@@ -3,7 +3,9 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { once } from 'node:events'
 import { Attempts } from '../server/attempts.mjs'
+import { application } from '../server/http.mjs'
 import { fingerprint } from '../server/files.mjs'
 import * as docker from '../server/runtime.mjs'
 
@@ -169,8 +171,77 @@ test('stop aborts a grade; deadline freezes once and persists the final diff and
   assert.equal(grades, 2)
   assert.match(a.review.diff, /learner change/)
   assert.ok(a.review.debrief.length)
+  assert.throws(() => store.finish(a, 'stopped'), /already ended/)
   assert.equal(new Attempts(runtime, options).get(a.id).chats[0].messages.length, 2)
   assert.throws(() => store.test(a), /active interview/)
+})
+
+test('stopping an active attempt cancels running tests, retains saved work and never grades it', async (t) => {
+  const grading = Promise.withResolvers()
+  let grades = 0, disposals = 0
+  const { store, a, advance, runtime, options } = await fixture(t, {
+    grade: async (_candidate, _pack, _log, signal) => {
+      grades++
+      grading.resolve()
+      await new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true }))
+    },
+    dispose: async () => { disposals++ },
+  })
+  store.begin(a)
+  fs.writeFileSync(path.join(a.workspace, 'notes.txt'), 'keep this investigation')
+  store.test(a)
+  await grading.promise
+  advance(72000)
+  const stopped = store.finish(a, 'stopped')
+  assert.equal(a.status, 'stopping')
+  assert.equal(a.deadline, null)
+  assert.equal(store.finish(a, 'stopped'), stopped)
+  advance(3600000)
+  store.tick()
+  await stopped
+  const restored = new Attempts(runtime, options)
+  const saved = restored.get(a.id)
+  restored.tick()
+  const view = restored.view(saved, 'first-tab')
+  assert.equal(view.status, 'stopped')
+  assert.equal(view.elapsedSeconds, 72)
+  assert.equal(view.testStatus, 'idle')
+  assert.equal(view.grade, null)
+  assert.equal(view.editorUrl, null)
+  assert.match(view.review.diff, /keep this investigation/)
+  assert.equal(view.review.debrief, undefined)
+  assert.throws(() => restored.begin(saved), /ready/)
+  assert.throws(() => restored.finish(saved, 'submitted'), /already ended/)
+  await restored.finish(saved, 'stopped')
+  assert.equal(grades, 1)
+  assert.equal(disposals, 1)
+})
+
+test('an unstarted attempt can stop and retry interrupted cleanup without starting the clock or grader', async (t) => {
+  let disposals = 0, grades = 0
+  const { store, a, runtime, options } = await fixture(t, {
+    dispose: async () => { if (++disposals === 1) throw new Error('Docker offline') },
+    grade: async () => { grades++ },
+  })
+  const server = application(store).listen(0, '127.0.0.1')
+  t.after(() => new Promise(resolve => server.close(resolve)))
+  await once(server, 'listening')
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/api/attempts/${a.id}/stop`, {
+    method: 'POST', headers: { 'X-ACIS-Tab': 'first-tab' },
+  })
+  assert.equal(response.status, 503)
+  assert.match((await response.json()).error, /Docker offline/)
+  assert.equal(a.status, 'error')
+  assert.equal(a.completionReason, 'stopped')
+  const restored = new Attempts(runtime, options)
+  const saved = restored.get(a.id)
+  restored.retry(saved)
+  await restored.finalizers.get(a.id)
+  assert.equal(saved.status, 'stopped')
+  assert.equal(saved.elapsedSeconds, 0)
+  assert.equal(saved.deadline, null)
+  assert.equal(grades, 0)
+  assert.equal(disposals, 2)
 })
 
 test('submission keeps a frozen snapshot across an interrupted grading attempt', async (t) => {

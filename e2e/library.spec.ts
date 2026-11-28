@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
-test('the default launcher opens the library and the learner can prepare a chosen Django exercise', async ({
+test('the library opens by default and a learner can leave a Django attempt and stop it without grading', async ({
   page,
   request,
   baseURL,
@@ -94,7 +94,31 @@ test('the default launcher opens the library and the learner can prepare a chose
   });
   await expect(page.getByText('Coding section', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Practice library' }).click();
-  await expect(
-    page.getByRole('complementary').getByRole('button', { name: /Room Booking Conflicts Django/ }),
-  ).toBeVisible();
+  const history = page.getByRole('complementary', { name: 'Recent attempts' });
+  const entry = history.getByRole('button', { name: /Room Booking Conflicts Django/ });
+  await entry.click();
+  await page.getByRole('button', { name: 'Begin', exact: true }).click();
+  await expect(page.locator('iframe[title="Code editor"]')).toBeVisible();
+  const otherTab = await request.post('/api/attempts/' + id + '/stop', {
+    headers: { 'X-ACIS-Tab': 'another-browser-tab' }, data: {},
+  });
+  expect(otherTab.status()).toBe(409);
+  await page.getByRole('button', { name: /Studio - Practice library/ }).click();
+  const stop = history.getByRole('button', { name: 'Stop attempt for Room Booking Conflicts' });
+  await stop.click();
+  const dialog = page.getByRole('dialog', { name: 'Stop this attempt?' });
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(entry).toContainText('In progress');
+  await stop.click();
+  await dialog.getByRole('button', { name: 'Stop attempt' }).click();
+  await expect(entry).toContainText('Stopped', { timeout: 30000 });
+  await expect(stop).toHaveCount(0);
+  await entry.click();
+  await expect(page.getByRole('heading', { name: 'Attempt stopped' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Attempt stopped' })).toBeVisible();
+  await expect(page.locator('.review-score')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Results', exact: true })).toHaveCount(0);
+  const stopped = await (await request.get('/api/attempts/' + id)).json();
+  expect(stopped).toMatchObject({ status: 'stopped', grade: null, deadline: null, editorUrl: null });
 });
