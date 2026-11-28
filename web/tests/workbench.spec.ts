@@ -144,7 +144,7 @@ async function routeWorkbench(context: BrowserContext, problems: Catalog['proble
       contentType: types[extension || ''],
     });
   });
-  return { attempt, reads: () => reads, lastChat: () => lastChat };
+  return { attempt, catalog, reads: () => reads, lastChat: () => lastChat };
 }
 async function take(page: Page, info: TestInfo, name: string) {
   const path = info.outputPath(name + '.png');
@@ -461,6 +461,52 @@ test('menus and dialogs follow the system motion preference', async ({ page, con
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
   }
+});
+
+test.describe('recent attempt actions', () => {
+  test.use({ hasTouch: true });
+
+  test('Stop fits beside the title and all history badges share a right edge', async ({ page, context }, info) => {
+    const { attempt, catalog } = await routeWorkbench(context);
+    attempt.status = 'active';
+    catalog.attempts.push(
+      { ...attempt, id: 'completed', status: 'review' },
+      { ...attempt, id: 'ready', title: 'Room Booking Conflicts Across Calendars', status: 'ready' },
+    );
+    await page.goto(origin);
+    const history = page.getByRole('complementary', { name: 'Recent attempts' });
+    const entry = history.getByRole('button', { name: 'Post Creation Django In progress' });
+    const stop = history.getByRole('button', { name: 'Stop attempt for Post Creation' });
+    const stopAction = page.getByRole('button', { name: /^Stop attempt for / });
+    const stoppableRows = history.locator('.attempt-row').filter({ has: stopAction });
+    await expect(stoppableRows).toHaveCount(2);
+    for (const width of [966, 320]) {
+      await page.setViewportSize({ width, height: 799 });
+      await history.scrollIntoViewIfNeeded();
+      const completed = (await history.getByText('Completed', { exact: true }).boundingBox())!;
+      for (const row of await stoppableRows.all()) {
+        const title = (await row.locator('strong').boundingBox())!;
+        const badge = (await row.locator('.history-status').boundingBox())!;
+        const action = (await row.locator(stopAction).boundingBox())!;
+        expect(badge.x + badge.width).toBeCloseTo(completed.x + completed.width, 0);
+        expect(action.x).toBeGreaterThanOrEqual(title.x + title.width);
+        expect(action.y).toBeLessThan(title.y + title.height);
+        expect(action.y + action.height).toBeLessThanOrEqual(badge.y);
+        expect(action.height).toBeGreaterThanOrEqual(24);
+      }
+      await history.screenshot({ path: info.outputPath('recent-attempts-' + width + '.png') });
+    }
+    await entry.focus();
+    await page.keyboard.press('Tab');
+    await expect(stop).toBeFocused();
+    await stop.press('Enter');
+    const dialog = page.getByRole('dialog', { name: 'Stop this attempt?' });
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(stop).toBeFocused();
+    await stop.tap();
+    await expect(dialog).toBeVisible();
+  });
 });
 
 test('a learner can resume a running attempt above the phone catalog', async ({
