@@ -57,7 +57,7 @@ export function application(attempts) {
     const a = req.attempt,
       action = req.params.action
     attempts.tick()
-    await attempts.lease(a, req.get('X-ACIS-Tab'))
+    await attempts.lease(a, req.get('X-ACIS-Tab'), { editor: action !== 'stop' })
     switch (action) {
       case 'lease':
         break
@@ -84,6 +84,10 @@ export function application(attempts) {
         break
       case 'submit':
         attempts.finish(a, 'submitted')
+        break
+      case 'stop':
+        await attempts.finish(a, 'stopped')
+        if (a.status === 'error') throw fault('Could not finish stopping the workspace. ' + a.error, 503)
         break
       case 'retry':
         attempts.retry(a)

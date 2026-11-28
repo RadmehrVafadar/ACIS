@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import Markdown from 'react-markdown';
 import {
@@ -56,12 +56,16 @@ export function Spinner() {
 export function Timer({
   deadline,
   duration,
-  now,
 }: {
   deadline: number | null;
   duration: number;
-  now: number;
 }) {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (!deadline) return;
+    const tick = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(tick);
+  }, [deadline]);
   const { mins, secs, remaining } = elapsedLabel(deadline, duration, now);
   return (
     <span

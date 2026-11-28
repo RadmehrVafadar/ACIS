@@ -1,6 +1,6 @@
 # AI coach
 
-Select the provider and model in **Help and settings > Assistant settings** or from the Ready screen.
+Open **Assistant settings** from the attempt dashboard or the Help menu to select a provider and model.
 
 ## Connect a provider
 
@@ -20,7 +20,7 @@ Edit the file and restart the launcher.
 A provider selection and model override can be stored in this browser.
 Keys stay on the host.
 Codex uses the model from its login unless you set `CODEX_MODEL` or select a model override.
-API provider availability on the Ready screen indicates that the corresponding key is configured.
+For API providers, **Assistant settings** shows whether the corresponding key is configured.
 The first request verifies the key and model with the provider.
 
 ## During practice

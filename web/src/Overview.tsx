@@ -8,6 +8,7 @@ import {
   Check,
   ChevronRight,
   CircleAlert,
+  CircleStop,
   Clock3,
   Code,
   GitBranch,
@@ -27,8 +28,8 @@ import {
   NotebookPen,
   TruckFast,
 } from '@keyline-icons/react/fill';
-import { dateLabel, gradeLabel, runtimeName, statusLabel } from './model';
-import type { Attempt, Catalog } from './model';
+import { canStopAttempt, dateLabel, gradeLabel, runtimeName, statusLabel } from './model';
+import type { Attempt, Catalog, PastAttempt } from './model';
 import { Spinner, TestResults, TextMarkdown } from './ui';
 import { LibraryMark } from './LibraryMark';
 
@@ -59,11 +60,13 @@ export function Library({
   creating,
   onCreate,
   onOpen,
+  onStop,
 }: {
   catalog: Catalog;
   creating: boolean;
   onCreate: (id: string) => void;
   onOpen: (id: string) => void;
+  onStop: (attempt: PastAttempt) => void;
 }) {
   const [query, setQuery] = useState('');
   const [runtime, setRuntime] = useState('');
@@ -102,13 +105,23 @@ export function Library({
           </h1>
           <p>Investigate a bug, test a fix, and compare notes with your AI coach.</p>
           {activeAttempt && (
-            <button
-              className="resume-attempt"
-              title={activeAttempt.title}
-              onClick={() => onOpen(activeAttempt.id)}
-            >
-              Resume
-            </button>
+            <div className="resume-actions">
+              <button
+                className="resume-attempt"
+                title={activeAttempt.title}
+                onClick={() => onOpen(activeAttempt.id)}
+              >
+                Resume
+              </button>
+              <Button
+                variant="outline"
+                className="secondary mobile-stop"
+                disabled={creating}
+                onClick={() => onStop(activeAttempt)}
+              >
+                Stop attempt
+              </Button>
+            </div>
           )}
         </div>
       </header>
@@ -197,20 +210,33 @@ export function Library({
         {attempts.length ? (
           <div className="attempt-list">
             {attempts.map((a) => (
-              <button
-                key={a.id}
-                className="attempt-entry"
-                title={`Created ${dateLabel(a.createdAt)}\nReplay seed ${a.seed}`}
-                onClick={() => onOpen(a.id)}
-              >
-                <strong>{a.title}</strong>
-                <span className="attempt-detail">
-                  <span>{stackNames.get(a.problemId) || a.problemId}</span>
-                  <span className={'history-status history-status-' + a.status}>
-                    {statusLabel(a.status)}
+              <div className="attempt-row" key={a.id}>
+                <button
+                  className="attempt-entry"
+                  title={`Created ${dateLabel(a.createdAt)}\nReplay seed ${a.seed}`}
+                  onClick={() => onOpen(a.id)}
+                >
+                  <strong>{a.title}</strong>
+                  <span className="attempt-detail">
+                    <span>{stackNames.get(a.problemId) || a.problemId}</span>
+                    <span className={'history-status history-status-' + a.status}>
+                      {statusLabel(a.status)}
+                    </span>
                   </span>
-                </span>
-              </button>
+                </button>
+                {canStopAttempt(a) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="secondary small"
+                    aria-label={'Stop attempt for ' + a.title}
+                    disabled={creating}
+                    onClick={() => onStop(a)}
+                  >
+                    Stop
+                  </Button>
+                )}
+              </div>
             ))}
           </div>
         ) : (
@@ -234,32 +260,70 @@ export function Library({
   );
 }
 
+function dashboardCopy(attempt: Attempt) {
+  switch (attempt.status) {
+    case 'active':
+      return {
+        heading: 'Interview in progress',
+        detail: 'Your timer is running. Pick up where you left off.',
+        button: 'Resume interview',
+      };
+    case 'finalizing':
+      return {
+        heading: 'Submitting interview',
+        detail: 'Your saved work is being graded.',
+        button: 'Submitting',
+      };
+    case 'stopping':
+      return { heading: 'Stopping attempt', detail: 'Closing the workspace.', button: 'Stopping' };
+    case 'error': {
+      const cleanup = attempt.completionReason === 'stopped';
+      return {
+        heading: cleanup ? 'Workspace cleanup failed' : 'Workspace setup failed',
+        detail: attempt.error || attempt.logs.at(-1),
+        button: cleanup ? 'Retry cleanup' : 'Retry setup',
+      };
+    }
+    default:
+      return {
+        heading: 'Before you begin',
+        detail: 'Your timer starts when you select Begin. You can leave and return to this attempt from the library.',
+        button: attempt.status === 'ready' ? 'Begin' : 'Preparing workspace',
+      };
+  }
+}
+
 export function Dashboard({
   attempt,
-  providerSummary,
   busy,
   onBegin,
   onSolve,
   onRetry,
+  onStop,
   onSettings,
 }: {
   attempt: Attempt;
-  providerSummary: string;
   busy: boolean;
   onBegin: () => void;
   onSolve: () => void;
   onRetry: () => void;
+  onStop: () => void;
   onSettings: () => void;
 }) {
   const active = attempt.status === 'active',
     ready = attempt.status === 'ready',
     failed = attempt.status === 'error';
+  const { heading, detail, button } = dashboardCopy(attempt);
+  const logName = attempt.completionReason === 'stopped'
+    ? 'Cleanup log'
+    : attempt.status === 'finalizing' ? 'Submission log' : 'Preparation log';
   return (
     <main className="page dashboard">
       <header className="attempt-intro">
         <div className="metadata">
           <span><Code size={16} aria-hidden="true" /> {runtimeName(attempt.runtime)}</span>
           <span><Clock3 size={15} aria-hidden="true" /> {attempt.durationMinutes} min</span>
+          <span><GitBranch size={15} aria-hidden="true" /> Seed {attempt.seed}</span>
         </div>
         <h1>{attempt.title}</h1>
         <p>{attempt.description}</p>
@@ -275,60 +339,34 @@ export function Dashboard({
           <div className={'attempt-state state-' + attempt.status}>
             {statusLabel(attempt.status)}
           </div>
-          <h2>
-            {active
-              ? 'Interview in progress'
-              : failed
-                ? 'Workspace setup failed'
-                : 'Before you begin'}
-          </h2>
-          <p>
-            {active
-              ? 'Your timer is running. Pick up where you left off.'
-              : failed
-                ? attempt.error || attempt.logs.at(-1)
-                : attempt.status === 'finalizing'
-                  ? 'Your saved work is being graded.'
-                  : 'Your timer starts when you select Begin. You can leave and return to this attempt from the library.'}
-          </p>
+          <h2>{heading}</h2>
+          <p>{detail}</p>
           <Button
             className="primary launch-button"
             disabled={busy || (!ready && !active && !failed)}
             onClick={active ? onSolve : failed ? onRetry : onBegin}
           >
-            {active
-              ? 'Resume interview'
-              : failed
-                ? 'Retry setup'
-                : ready
-                  ? 'Begin'
-                  : attempt.status === 'finalizing'
-                    ? 'Submitting'
-                    : 'Preparing workspace'}
+            {button}
             {ready || active ? <ArrowRight size={16} /> : !failed && <Spinner />}
           </Button>
-          <div className="launch-coach">
-            <h3>
-              <MessageSquare size={17} /> AI coach
-            </h3>
-            <p>{providerSummary}</p>
-            <button className="link-button" onClick={onSettings}>
-              Assistant settings <SlidersHorizontal size={13} />
-            </button>
-          </div>
-          <small className="launch-seed">
-            Replay seed <code>{attempt.seed}</code>
-          </small>
+          {canStopAttempt(attempt) && (
+            <Button variant="outline" className="secondary launch-stop" disabled={busy} onClick={onStop}>
+              Stop attempt
+            </Button>
+          )}
+          <button className="link-button launch-settings" onClick={onSettings}>
+            <SlidersHorizontal size={14} aria-hidden="true" /> Assistant settings
+          </button>
           {failed && (
             <span role="alert" className="notice danger">
-              <CircleAlert size={16} /> Check the preparation log.
+              <CircleAlert size={16} /> Check the {logName.toLowerCase()}.
             </span>
           )}
         </aside>
       </div>
       {!active && !ready && (
         <section className="setup-log">
-          <h2>{attempt.status === 'finalizing' ? 'Submission log' : 'Preparation log'}</h2>
+          <h2>{logName}</h2>
           <pre>{attempt.logs.slice(-12).join('\n') || 'Connecting to the local runtime…'}</pre>
         </section>
       )}
@@ -347,7 +385,8 @@ export function Review({
   onLibrary: () => void;
   busy: boolean;
 }) {
-  const [tab, setTab] = useState<'results' | 'diff' | 'chat'>('results');
+  const stopped = attempt.status === 'stopped';
+  const [tab, setTab] = useState<'results' | 'diff' | 'chat'>(stopped ? 'diff' : 'results');
   return (
     <main className="page review">
       <div className="page-intro">
@@ -371,14 +410,16 @@ export function Review({
       </div>
       <div className="review-summary">
         <div className="row-icon">
-          <ShieldCheck size={24} />
+          {stopped ? <CircleStop size={24} /> : <ShieldCheck size={24} />}
         </div>
         <div>
-          <h2>Interview complete</h2>
+          <h2>{stopped ? 'Attempt stopped' : 'Interview complete'}</h2>
           <p>
-            {attempt.completionReason === 'expired'
-              ? 'The interview timer expired.'
-              : 'Your submission has been saved.'}
+            {stopped
+              ? 'You ended this attempt without a grade.'
+              : attempt.completionReason === 'expired'
+                ? 'The interview timer expired.'
+                : 'Your submission has been saved.'}
             {typeof attempt.elapsedSeconds === 'number' && (
               <span>
                 {' '}
@@ -388,13 +429,15 @@ export function Review({
             )}
           </p>
         </div>
-        <strong className="review-score">{gradeLabel(attempt.grade)}</strong>
+        {!stopped && <strong className="review-score">{gradeLabel(attempt.grade)}</strong>}
       </div>
       <nav className="inline-tabs" aria-label="Attempt review">
-        <button className={tab === 'results' ? 'selected' : ''} onClick={() => setTab('results')}>
-          <Check size={15} />
-          Results
-        </button>
+        {!stopped && (
+          <button className={tab === 'results' ? 'selected' : ''} onClick={() => setTab('results')}>
+            <Check size={15} />
+            Results
+          </button>
+        )}
         <button className={tab === 'diff' ? 'selected' : ''} onClick={() => setTab('diff')}>
           <GitBranch size={15} />
           Code changes
@@ -427,7 +470,7 @@ export function Review({
         </div>
       ) : tab === 'diff' ? (
         <section className="panel">
-          <h2>Submitted changes</h2>
+          <h2>{stopped ? 'Saved changes' : 'Submitted changes'}</h2>
           <pre className="diff">{attempt.review?.diff || 'No source changes.'}</pre>
         </section>
       ) : (

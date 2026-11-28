@@ -11,7 +11,7 @@ export default async function teardown() {
     const file = path.join(dir, id, 'state.json')
     if (fs.existsSync(file)) {
       const attempt = JSON.parse(fs.readFileSync(file, 'utf8'))
-      if (attempt.status !== 'review') await dispose(attempt)
+      if (!['review', 'stopped'].includes(attempt.status)) await dispose(attempt)
     }
   }
 }

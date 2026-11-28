@@ -27,13 +27,13 @@ import {
   readRoute,
   writeLocal,
 } from './model';
-import type { Attempt, Catalog, CoachSettings, Route } from './model';
+import type { Attempt, Catalog, CoachSettings, PastAttempt, Route } from './model';
 import { Dashboard, Library, Review } from './Overview';
 import { Settings } from './Coach';
 import { Dialog, IconButton, Mark, Spinner, Timer } from './ui';
 
 const Workbench = lazy(() => import('./Workbench'));
-type Modal = 'settings' | 'instructions' | 'reset' | 'reset-data' | 'submit' | null;
+type Modal = 'settings' | 'instructions' | 'reset' | 'reset-data' | 'submit' | { stop: PastAttempt } | null;
 const studioName = 'AI Coding Interview Studio';
 const empty: Catalog = { problems: [], attempts: [], providers: [] };
 export default function App() {
@@ -45,7 +45,6 @@ export default function App() {
     [pending, setPending] = useState(0);
   const [error, setError] = useState(''),
     [connectionError, setConnectionError] = useState(''),
-    [now, setNow] = useState(Date.now()),
     [modal, setModal] = useState<Modal>(null),
     [help, setHelp] = useState(false);
   const [theme, setTheme] = useState(() => readLocal<'dark' | 'light'>('acis-theme', 'dark'));
@@ -168,10 +167,6 @@ export default function App() {
     document.title = attempt?.title ? attempt.title + ' - ' + studioName : studioName;
   }, [attempt?.title]);
   useEffect(() => {
-    const tick = setInterval(() => setNow(Date.now()), 500);
-    return () => clearInterval(tick);
-  }, []);
-  useEffect(() => {
     if (!help) return;
     const close = (e: PointerEvent) => {
       if (!menu.current?.contains(e.target as Node)) setHelp(false);
@@ -200,8 +195,7 @@ export default function App() {
       setPending((n) => n - 1);
     }
   }
-  async function action(name: string) {
-    const id = route.id;
+  async function action(name: string, id = route.id) {
     if (!id) return false;
     setPending((n) => n + 1);
     setError('');
@@ -210,7 +204,7 @@ export default function App() {
       if (currentId.current === id) refresh();
       return true;
     } catch (e) {
-      if (currentId.current === id) {
+      if (currentId.current === route.id) {
         setError(errorMessage(e));
         refresh();
       }
@@ -221,22 +215,23 @@ export default function App() {
   }
   function show(next: Modal) {
     setHelp(false);
+    setError('');
     setModal(next);
   }
   const active = attempt?.status === 'active' && attempt.id === route.id;
   const inEditor = active && !route.dashboard && lease === 'held';
-  const available = catalog.providers.filter((p) => p.available);
-  const selectedProvider = catalog.providers.find((p) => p.id === settings.provider);
-  const providerSummary = selectedProvider?.available
-    ? selectedProvider.label + ' is configured.'
-    : available.length
-      ? 'Choose a configured provider in settings.'
-      : 'Configure a provider or practice without the assistant.';
   const isLeasable = attempt?.status === 'active' || attempt?.status === 'ready';
   const currentAttempt = attempt && attempt.id === route.id ? attempt : null;
   const Bar = route.id ? 'header' : 'div';
+  const stopTarget = typeof modal === 'object' ? modal?.stop : null;
   async function confirmed() {
     if (!modal) return;
+    if (typeof modal === 'object') {
+      const ok = await action('stop', modal.stop.id);
+      if (ok) setModal((current) => current === modal ? null : current);
+      void loadCatalog();
+      return;
+    }
     if (await action(modal)) {
       setModal(null);
       if (modal === 'submit') navigate(route.id, true);
@@ -255,22 +250,23 @@ export default function App() {
             <span>{studioName}</span>
           </button>
         )}
-        {currentAttempt && currentAttempt.status !== 'review' && (
+        {currentAttempt && !inEditor && !currentAttempt.completionReason && currentAttempt.status !== 'review' && (
           <Timer
             deadline={currentAttempt.deadline}
             duration={currentAttempt.durationMinutes}
-            now={now}
           />
         )}
         <div className="top-actions" role="group" aria-label="Studio controls">
-          <span
-            role="img"
-            className={'connection ' + (connectionError ? 'offline' : '')}
-            title={connectionError ? 'Reconnecting to local runtime' : 'Connected to local runtime'}
-            aria-label={connectionError ? 'Disconnected' : 'Connected'}
-          >
-            <Signal size={16} />
-          </span>
+          {!inEditor && (
+            <span
+              role="img"
+              className={'connection ' + (connectionError ? 'offline' : '')}
+              title={connectionError ? 'Reconnecting to local runtime' : 'Connected to local runtime'}
+              aria-label={connectionError ? 'Disconnected' : 'Connected'}
+            >
+              <Signal size={16} />
+            </span>
+          )}
           <IconButton
             label={'Switch to ' + (theme === 'dark' ? 'light' : 'dark') + ' theme'}
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -338,7 +334,7 @@ export default function App() {
             ))}
         </div>
       </Bar>
-      {error && (
+      {error && !stopTarget && (
         <div className="error-banner" role="alert">
           <CircleAlert size={16} />
           <span>{error}</span>
@@ -371,6 +367,7 @@ export default function App() {
             creating={busy}
             onCreate={(id) => void create(id)}
             onOpen={(id) => navigate(id)}
+            onStop={(target) => show({ stop: target })}
           />
         ) : (
           <div className="loading">
@@ -398,7 +395,7 @@ export default function App() {
             Practice library
           </Button>
         </main>
-      ) : currentAttempt.status === 'review' ? (
+      ) : currentAttempt.status === 'review' || currentAttempt.status === 'stopped' ? (
         <Review
           attempt={currentAttempt}
           busy={busy}
@@ -427,10 +424,10 @@ export default function App() {
       ) : (
         <Dashboard
           attempt={currentAttempt}
-          providerSummary={providerSummary}
           busy={busy || (isLeasable && lease !== 'held')}
           onBegin={() => void action('begin').then((ok) => ok && navigate(route.id))}
           onRetry={() => void action('retry')}
+          onStop={() => show({ stop: currentAttempt })}
           onSolve={() => navigate(route.id)}
           onSettings={() => show('settings')}
         />
@@ -442,6 +439,25 @@ export default function App() {
           onChange={setSettings}
           onClose={() => setModal(null)}
         />
+      )}
+      {stopTarget && (
+        <Dialog title="Stop this attempt?" onClose={() => setModal(null)}>
+          <div className="dialog-body">
+            <p>
+              <strong>{stopTarget.title}</strong> (seed {stopTarget.seed}) will close without a
+              grade. You can still view your saved changes and conversations afterward.
+            </p>
+            {error && <p className="notice danger" role="alert">{error}</p>}
+          </div>
+          <footer>
+            <Button variant="outline" className="secondary" disabled={busy} onClick={() => setModal(null)}>
+              Cancel
+            </Button>
+            <Button className="danger-button" disabled={busy} onClick={() => void confirmed()}>
+              {busy ? <><Spinner /> Stopping…</> : 'Stop attempt'}
+            </Button>
+          </footer>
+        </Dialog>
       )}
       {modal === 'instructions' && (
         <Dialog title="Test instructions" onClose={() => setModal(null)}>
